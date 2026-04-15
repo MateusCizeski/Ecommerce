@@ -1,0 +1,46 @@
+## Build outputs
+bin/
+obj/
+out/
+
+## VS / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+## Logs
+*.log
+logs/
+
+## Env / secrets
+.env
+.env.*
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+
+## EF Core migrations (keep migrations, ignore snapshots optionally)
+## Uncomment if you want to ignore snapshots:
+# *ModelSnapshot.cs
+
+## Docker overrides
+docker-compose.override.yml
+Dockerfile.local
+
+## Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+.nuget/
+
+## OS
+.DS_Store
+Thumbs.db
