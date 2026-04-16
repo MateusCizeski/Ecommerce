@@ -3,5 +3,5 @@
   <Project Path="Application/Application.csproj" />
   <Project Path="Domain/Domain.csproj" />
   <Project Path="Infrastructure/Infrastructure.csproj" />
-  <Project Path="Repository/Repository.csproj" />
+  <Project Path="Repository/Repository.csproj" Id="7caa8484-a038-4b51-bdb9-ccb5f9844355" />
 </Solution>
