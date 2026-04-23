@@ -1,5 +1,5 @@
-﻿using Domain.Interfaces;
-using Ecommerce.Domain;
+﻿using Ecommerce.Domain;
+using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories
