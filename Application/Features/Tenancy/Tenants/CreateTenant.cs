@@ -4,7 +4,7 @@ using Ecommerce.Domain;
 using FluentValidation;
 using MediatR;
 
-namespace Application;
+namespace Application.Features.Tenancy.Tenants;
 
 public record CreateTenantCommand(string Name, string Subdomain, string Email) : IRequest<Guid>;
 
@@ -28,17 +28,5 @@ public class CreateTenantCommandHandler(ITenantRepository tenantRepo, IUnitOfWor
         await tenantRepo.AddAsync(tenant, ct);
         await uow.CommitAsync(ct);
         return tenant.Id;
-    }
-}
-
-public record UpdateTenantCommand(Guid Id, string Name, string Email) : IRequest;
-
-public class UpdateTenantCommandHandler(ITenantRepository tenantRepo, IUnitOfWork uow) : IRequestHandler<UpdateTenantCommand>
-{
-    public async Task Handle(UpdateTenantCommand cmd, CancellationToken ct)
-    {
-        var tenant = await tenantRepo.GetByIdAsync(cmd.Id, ct) ?? throw new NotFoundException(nameof(Tenant), cmd.Id);
-        tenant.Update(cmd.Name, cmd.Email);
-        await uow.CommitAsync(ct);
     }
 }
