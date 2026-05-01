@@ -1,7 +1,7 @@
-﻿using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
 using FluentValidation;
-using MediatR;
+using Domain.Interfaces;
 
 namespace Application.Features.Commerce.Orders;
 

@@ -1,8 +1,8 @@
-﻿using Application.Exceptions;
-using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
 using FluentValidation;
-using MediatR;
+using Domain.Interfaces;
+using Application.Exceptions;
 
 namespace Application.Features.Tenancy.Tenants;
 

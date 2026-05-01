@@ -1,7 +1,7 @@
-﻿using Application.Features.Commerce.Orders.DTOs;
-using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
-using MediatR;
+using Domain.Interfaces;
+using Application.Features.Commerce.Orders.DTOs;
 
 namespace Application.Features.Commerce.Orders;
 
