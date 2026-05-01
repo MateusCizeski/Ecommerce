@@ -1,6 +1,6 @@
-﻿using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
-using MediatR;
+using Domain.Interfaces;
 
 namespace Application.Features.Commerce.Cart;
 

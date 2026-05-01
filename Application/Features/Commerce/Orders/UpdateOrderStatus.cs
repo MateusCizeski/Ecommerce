@@ -1,8 +1,8 @@
-﻿using Application.Exceptions;
-using Application.Interfaces;
-using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
-using MediatR;
+using Domain.Interfaces;
+using Application.Interfaces;
+using Application.Exceptions;
 
 namespace Application.Features.Commerce.Orders;
 

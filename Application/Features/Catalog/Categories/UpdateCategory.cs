@@ -1,7 +1,7 @@
-﻿using Application.Exceptions;
-using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
-using MediatR;
+using Domain.Interfaces;
+using Application.Exceptions;
 
 namespace Application.Features.Catalog.Categories;
 

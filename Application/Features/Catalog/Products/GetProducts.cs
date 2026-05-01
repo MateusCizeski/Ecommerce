@@ -2,6 +2,7 @@
 using Domain.Interfaces;
 using Ecommerce.Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Catalog.Products;
 

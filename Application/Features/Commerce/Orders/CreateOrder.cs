@@ -1,8 +1,8 @@
-﻿using Application.Interfaces;
-using Domain.Interfaces;
+﻿using MediatR;
 using Ecommerce.Domain;
 using FluentValidation;
-using MediatR;
+using Domain.Interfaces;
+using Application.Interfaces;
 
 namespace Application.Features.Commerce.Orders;
 

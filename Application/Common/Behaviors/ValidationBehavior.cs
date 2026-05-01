@@ -1,5 +1,5 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
+using FluentValidation;
 
 namespace Application.Common.Behaviors;
 
