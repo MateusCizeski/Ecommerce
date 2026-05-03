@@ -24,12 +24,20 @@ public class Order : TenantEntity
     protected Order() { }
 
     public static Order Create(
-    Guid tenantId, Guid customerId, Guid shippingAddressId, string orderNumber,
-    IEnumerable<OrderItem> items, decimal shippingAmount, decimal taxAmount,
-    decimal discountAmount = 0, Guid? couponId = null, string? notes = null)
+        Guid tenantId,
+        Guid customerId,
+        Guid shippingAddressId,
+        string orderNumber,
+        IEnumerable<OrderItem> items,
+        decimal shippingAmount,
+        decimal taxAmount,
+        decimal discountAmount = 0,
+        Guid? couponId = null,
+        string? notes = null)
     {
         var itemList = items.ToList();
-        if (!itemList.Any()) throw new DomainException("Order must have at least one item.");
+        if (!itemList.Any())
+            throw new DomainException("Order must have at least one item.");
 
         var subtotal = itemList.Sum(i => i.TotalPrice);
         var order = new Order
@@ -46,7 +54,9 @@ public class Order : TenantEntity
             CouponId = couponId,
             Notes = notes
         };
+
         foreach (var item in itemList) order._items.Add(item);
+
         order.AddDomainEvent(new OrderCreatedEvent(order.Id, tenantId, customerId, order.TotalAmount));
         return order;
     }
@@ -55,6 +65,7 @@ public class Order : TenantEntity
     {
         if (Status != OrderStatus.Pending)
             throw new DomainException("Only pending orders can be confirmed.");
+
         Status = OrderStatus.Processing;
         MarkUpdated();
         AddDomainEvent(new OrderConfirmedEvent(Id, TenantId, CustomerId));
@@ -64,26 +75,42 @@ public class Order : TenantEntity
     {
         if (Status != OrderStatus.Processing)
             throw new DomainException("Only processing orders can be shipped.");
+
         Status = OrderStatus.Shipped;
         MarkUpdated();
+        AddDomainEvent(new OrderShippedEvent(Id, TenantId));
     }
 
     public void Deliver()
     {
         if (Status != OrderStatus.Shipped)
             throw new DomainException("Only shipped orders can be delivered.");
+
         Status = OrderStatus.Delivered;
         MarkUpdated();
+        AddDomainEvent(new OrderDeliveredEvent(Id, TenantId));
     }
 
     public void Cancel(string reason)
     {
         if (Status is OrderStatus.Shipped or OrderStatus.Delivered)
-            throw new DomainException("Cannot cancel shipped or delivered orders.");
+            throw new DomainException("Cannot cancel a shipped or delivered order.");
+
         Status = OrderStatus.Cancelled;
         Notes = reason;
         MarkUpdated();
+
         AddDomainEvent(new OrderCancelledEvent(Id, TenantId, CustomerId));
+
+        if (Status == OrderStatus.Processing)
+        {
+            var cancelledItems = _items
+                .Select(i => new OrderCancelledItem(i.ProductVariantId, i.Quantity))
+                .ToList()
+                .AsReadOnly();
+
+            AddDomainEvent(new OrderCancelledWithItemsEvent(Id, TenantId, cancelledItems));
+        }
     }
 
     public Payment AddPayment(PaymentMethod method, decimal amount, string currency = "USD")
@@ -94,5 +121,11 @@ public class Order : TenantEntity
     }
 
     public bool IsFullyPaid() =>
-    _payments.Where(p => p.Status == PaymentStatus.Succeeded).Sum(p => p.Amount) >= TotalAmount;
+        _payments
+            .Where(p => p.Status == PaymentStatus.Succeeded)
+            .Sum(p => p.Amount) >= TotalAmount;
+
+    public IReadOnlyCollection<OrderItem> GetItemsForStockDeduction() =>
+        _items.AsReadOnly();
 }
+
