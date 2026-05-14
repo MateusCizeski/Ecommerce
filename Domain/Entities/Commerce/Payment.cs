@@ -6,12 +6,14 @@ public class Payment : BaseEntity
     public PaymentMethod Method { get; private set; }
     public PaymentStatus Status { get; private set; } = PaymentStatus.Pending;
     public decimal Amount { get; private set; }
+    public decimal RefundedAmount { get; private set; }
     public string Currency { get; private set; } = default!;
     public string? StripePaymentIntentId { get; private set; }
     public string? StripeChargeId { get; private set; }
     public string? GatewayResponse { get; private set; }
     public DateTime? PaidAt { get; private set; }
     public DateTime? RefundedAt { get; private set; }
+    public decimal RefundableAmount => Amount - RefundedAmount;
 
     protected Payment() { }
 
@@ -37,13 +39,28 @@ public class Payment : BaseEntity
         GatewayResponse = gatewayResponse;
     }
 
-    public void Refund()
+    public void RegisterRefund(decimal refundAmount)
     {
         if (Status != PaymentStatus.Succeeded)
             throw new DomainException("Only succeeded payments can be refunded.");
-        Status = PaymentStatus.Refunded;
+
+        if (refundAmount <= 0)
+            throw new DomainException("Refund amount must be positive.");
+
+        if (refundAmount > RefundableAmount)
+            throw new DomainException(
+                $"Refund amount ({refundAmount}) exceeds refundable amount ({RefundableAmount}).");
+
+        RefundedAmount += refundAmount;
+
+        Status = RefundedAmount >= Amount ? PaymentStatus.Refunded : PaymentStatus.PartiallyRefunded;
         RefundedAt = DateTime.UtcNow;
+        MarkUpdated();
     }
 
-    public void SetStripePaymentIntentId(string id) => StripePaymentIntentId = id;
+    public void SetStripePaymentIntentId(string id)
+    {
+        StripePaymentIntentId = id;
+        MarkUpdated();
+    }
 }
