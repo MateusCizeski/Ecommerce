@@ -18,16 +18,28 @@ public static class RepositoryDependencyInjection
         );
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Tenancy
         services.AddScoped<ITenantRepository, TenantRepository>();
+
+        // Catalog
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
+
+        // Identity
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+
+        // Commerce
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
-        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<ICouponRepository, CouponRepository>();
+        services.AddScoped<IStripeWebhookEventRepository, StripeWebhookEventRepository>(); // new
+
+        // Billing
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
         return services;
     }
 }
+
