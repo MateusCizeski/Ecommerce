@@ -23,6 +23,10 @@ internal class PaymentConfig : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Amount)
             .HasColumnType("decimal(18,2)");
 
+        builder.Property(p => p.RefundedAmount)
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0m);
+
         builder.Property(p => p.Currency)
             .IsRequired()
             .HasMaxLength(3);
@@ -36,7 +40,10 @@ internal class PaymentConfig : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.GatewayResponse)
             .HasColumnType("text");
 
+        builder.Ignore(p => p.RefundableAmount);
+
         builder.HasIndex(p => p.StripePaymentIntentId);
+        builder.HasIndex(p => p.StripeChargeId);
         builder.HasIndex(p => new { p.OrderId, p.Status });
     }
 }
