@@ -1,3 +1,7 @@
+using Ecommerce.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace Repository.SettingsEF;
 
 public class StripeWebhookEventConfig : IEntityTypeConfiguration<StripeWebhookEvent>

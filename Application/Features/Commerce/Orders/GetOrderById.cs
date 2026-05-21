@@ -2,6 +2,7 @@
 using Ecommerce.Domain;
 using Domain.Interfaces;
 using Application.Features.Commerce.Orders.DTOs;
+using PaymentDto = Application.Features.Commerce.Orders.DTOs.PaymentDto;
 
 namespace Application.Features.Commerce.Orders;
 
@@ -15,6 +16,6 @@ public class GetOrderByIdQueryHandler(IOrderRepository orderRepo, ITenantContext
         if (o.TenantId != tenant.TenantId) throw new TenantAccessException();
         return new OrderDetailDto(o.Id, o.OrderNumber, o.Status.ToString(), o.Subtotal, o.DiscountAmount, o.ShippingAmount, o.TaxAmount, o.TotalAmount, o.PlacedAt, o.Notes,
             o.Items.Select(i => new OrderItemDto(i.ProductVariantId, i.ProductNameSnapshot, i.SKUSnapshot, i.Quantity, i.UnitPrice, i.TotalPrice)),
-            o.Payments.Select(p => new PaymentDto(p.Id, p.Method.ToString(), p.Status.ToString(), p.Amount, p.Currency, p.PaidAt)));
+            o.Payments.Select(p => new Application.Features.Commerce.Orders.DTOs.PaymentDto(p.Id, p.Method.ToString(), p.Status.ToString(), p.Amount, p.Currency, p.PaidAt)));
     }
 }

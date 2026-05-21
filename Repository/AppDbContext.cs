@@ -35,6 +35,7 @@ public class AppDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<StripeWebhookEvent> StripeWebhookEvents => Set<StripeWebhookEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +57,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new OrderItemConfig());
         modelBuilder.ApplyConfiguration(new PaymentConfig());
         modelBuilder.ApplyConfiguration(new CouponConfig());
+        modelBuilder.ApplyConfiguration(new StripeWebhookEventConfig());
 
         ApplyGlobalQueryFilters(modelBuilder);
     }
@@ -81,7 +83,7 @@ public class AppDbContext : DbContext
         var result = await base.SaveChangesAsync(ct);
 
         if (_mediator is not null) await DispatchDomainEventsAsync(ct);
-        
+
         return result;
     }
 

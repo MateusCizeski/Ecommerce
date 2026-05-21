@@ -1,4 +1,5 @@
 using System.Configuration.Internal;
+using Application;
 using Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Stripe;

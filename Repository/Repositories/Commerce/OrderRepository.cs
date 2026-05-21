@@ -18,6 +18,20 @@ public class OrderRepository : IOrderRepository
                     .Include(o => o.Payments)
                     .FirstOrDefaultAsync(o => o.Id == id, ct);
 
+    public async Task<Order?> GetByPaymentIntentIdAsync(string paymentIntentId, CancellationToken ct = default)
+        => await _db.Orders
+                    .Include(o => o.Payments)
+                    .FirstOrDefaultAsync(
+                        o => o.Payments.Any(p => p.StripePaymentIntentId == paymentIntentId),
+                        ct);
+
+    public async Task<Order?> GetByChargeIdAsync(string chargeId, CancellationToken ct = default)
+        => await _db.Orders
+                    .Include(o => o.Payments)
+                    .FirstOrDefaultAsync(
+                        o => o.Payments.Any(p => p.StripeChargeId == chargeId),
+                        ct);
+
     public IQueryable<Order> Query(Guid tenantId)
         => _db.Orders.Include(o => o.Items)
                      .Where(o => o.TenantId == tenantId);

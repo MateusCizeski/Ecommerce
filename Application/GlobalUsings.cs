@@ -1,0 +1,15 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using FluentValidation;
+global using MediatR;
+global using Microsoft.Extensions.Logging;
+global using Domain;
+global using Domain.Interfaces;
+global using Ecommerce.Domain;
+global using Application;
+global using Application.Exceptions;
+global using Application.Interfaces;
+global using Application.Common;
