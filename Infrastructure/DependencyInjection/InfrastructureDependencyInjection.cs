@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces;
 using Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Repository;
 using StackExchange.Redis;
 using Stripe;
 
