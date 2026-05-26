@@ -3,6 +3,7 @@ using FluentValidation;
 using Domain.Interfaces;
 using Ecommerce.Domain;
 using Application.Exceptions;
+using ValidationException = FluentValidation.ValidationException;
 
 namespace Application.Features.Billing.Subscriptions;
 
@@ -41,7 +42,7 @@ public class CreateSubscriptionCommandValidator : AbstractValidator<CreateSubscr
 public class CreateSubscriptionCommandHandler(
     IPlanRepository planRepo,
     ISubscriptionRepository subscriptionRepo,
-    IHttpTenantContext tenantContext,
+    ITenantContext tenantContext,
     IUnitOfWork uow
 ) : IRequestHandler<CreateSubscriptionCommand, CreateSubscriptionResult>
 {
@@ -51,11 +52,10 @@ public class CreateSubscriptionCommandHandler(
 
     // 1. Verifica se o plano existe
     var plan = await planRepo.GetByIdAsync(cmd.PlanId, ct)
-        ?? throw new NotFoundException($"Plano '{cmd.PlanId}' não encontrado.");
+            ?? throw new NotFoundException("Plan", cmd.PlanId);
 
     if (!plan.IsActive)
-      throw new ValidationException("O plano selecionado não está disponível.");
-
+      throw new ValidationException(new[] { new FluentValidation.Results.ValidationFailure("PlanId", "O plano selecionado não está disponível.") });
     // 2. Verifica se o tenant já tem uma subscription ativa
     var existingSubscription = await subscriptionRepo.GetActiveByTenantAsync(tenantId, ct);
     if (existingSubscription is not null)
@@ -68,9 +68,7 @@ public class CreateSubscriptionCommandHandler(
     // Define a data de término com base no ciclo de cobrança do plano
     var endDate = plan.BillingCycle switch
     {
-      BillingCycle.Monthly => now.AddMonths(1),
-      BillingCycle.Quarterly => now.AddMonths(3),
-      BillingCycle.Annually => now.AddYears(1),
+      BillingCycle.Yearly => now.AddYears(1),
       _ => now.AddMonths(1)
     };
 
