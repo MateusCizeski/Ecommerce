@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecommerce SaaS — Fases do Projeto</title>
+    <style>
+      :root {
+        --color-done: #1d9e75;
+        --color-partial: #ef9f27;
+        --color-todo: var(--color-border-tertiary, #e5e5e5);
+        --color-initial: #b4b2a9;
+        --bg-done: #e1f5ee;
+        --text-done: #085041;
+        --bg-partial: #faeeda;
+        --text-partial: #633806;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --color-background-primary: #fff;
+        --color-background-secondary: #f6f6f6;
+        --color-border-tertiary: #e5e5e5;
+        --color-text-primary: #1f1f1f;
+        --color-text-secondary: #666;
+        --color-text-tertiary: #999;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          --color-background-primary: #1e1e1e;
+          --color-background-secondary: #2d2d2d;
+          --color-border-tertiary: #3d3d3d;
+          --color-text-primary: #e0e0e0;
+          --color-text-secondary: #b0b0b0;
+          --color-text-tertiary: #808080;
+        }
+      }
+
+      .wrap {
+        padding: 1rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        margin-bottom: 2rem;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin: 0 0 0.5rem;
+        color: var(--color-text-primary);
+      }
+
+      .header p {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        margin: 0;
+      }
+
+      /* Legend */
+      .legend {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--color-border-tertiary);
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .dot-done {
+        background: var(--color-done);
+      }
+      .dot-partial {
+        background: var(--color-partial);
+      }
+      .dot-todo {
+        background: var(--color-todo);
+      }
+
+      /* Summary Stats */
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .stat {
+        text-align: center;
+        padding: 10px 6px;
+        border-radius: 10px;
+        background: var(--color-background-secondary);
+        border: 1px solid var(--color-border-tertiary);
+      }
+
+      .stat-num {
+        font-size: 22px;
+        font-weight: 600;
+      }
+
+      .stat-lbl {
+        font-size: 11px;
+        color: var(--color-text-secondary);
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+
+      /* Progress Bar */
+      .total-bar-wrap {
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: var(--color-background-secondary);
+        border-radius: 10px;
+        border: 1px solid var(--color-border-tertiary);
+      }
+
+      .total-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+
+      .total-bar-bg {
+        height: 10px;
+        background: var(--color-border-tertiary);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .total-bar-fill {
+        height: 100%;
+        border-radius: 5px;
+        background: linear-gradient(
+          90deg,
+          var(--color-done),
+          var(--color-partial)
+        );
+      }
+
+      /* Phases */
+      .phases-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .phase {
+        border: 1px solid var(--color-border-tertiary);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+      }
+
+      .phase:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .phase-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+        background: var(--color-background-secondary);
+        transition: background 0.2s;
+      }
+
+      .phase-header:hover {
+        background: var(--color-border-tertiary);
+      }
+
+      .phase-header:focus {
+        outline: 2px solid var(--color-done);
+        outline-offset: -1px;
+      }
+
+      .phase-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        min-width: 180px;
+        flex-shrink: 0;
+      }
+
+      .phase-bar-bg {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--color-border-tertiary);
+        overflow: hidden;
+        min-width: 100px;
+      }
+
+      .phase-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+
+      .phase-pct {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        min-width: 40px;
+        text-align: right;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+
+      .chev {
+        font-size: 18px;
+        color: var(--color-text-tertiary);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+
+      .chev.open {
+        transform: rotate(90deg);
+      }
+
+      /* Phase Body */
+      .phase-body {
+        display: none;
+        padding: 12px 14px 14px;
+        border-top: 1px solid var(--color-border-tertiary);
+        background: var(--color-background-primary);
+      }
+
+      .phase-body.open {
+        display: block;
+      }
+
+      .section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 8px 0 6px;
+      }
+
+      .section-title:first-child {
+        margin-top: 0;
+      }
+
+      .items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .item {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+      }
+
+      .item.done {
+        background: var(--bg-done);
+        color: var(--text-done);
+      }
+
+      .item.partial {
+        background: var(--bg-partial);
+        color: var(--text-partial);
+      }
+
+      .item.todo {
+        background: var(--color-background-secondary);
+        color: var(--color-text-secondary);
+        border: 1px solid var(--color-border-tertiary);
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        margin-top: 10px;
+        line-height: 1.6;
+        border-left: 3px solid var(--color-border-tertiary);
+        padding-left: 10px;
+        font-style: italic;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .wrap {
+          padding: 1rem;
+        }
+
+        .phase-label {
+          min-width: 120px;
+        }
+
+        .summary {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .phase-header {
+          flex-wrap: wrap;
+          padding: 10px;
+        }
+
+        .phase-label {
+          min-width: 100%;
+          margin-bottom: 8px;
+        }
+
+        .phase-bar-bg {
+          min-width: auto;
+        }
+
+        .summary {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <h1>📊 Ecommerce SaaS — Roadmap</h1>
+        <p>Acompanhamento das fases de desenvolvimento</p>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="dot dot-done"></span> Concluído
+        </div>
+        <div class="legend-item">
+          <span class="dot dot-partial"></span> Parcial / Pendente
+        </div>
+        <div class="legend-item">
+          <span class="dot dot-todo"></span> Não iniciado
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="stat">
+          <div class="stat-num" style="color: var(--color-done)">5</div>
+          <div class="stat-lbl">fases<br />completas</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" style="color: var(--color-partial)">2</div>
+          <div class="stat-lbl">fases em<br />progresso</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" style="color: var(--color-initial)">1</div>
+          <div class="stat-lbl">fase não<br />iniciada</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">~72%</div>
+          <div class="stat-lbl">progresso<br />geral</div>
+        </div>
+      </div>
+
+      <div class="total-bar-wrap">
+        <div class="total-label">
+          <span>Progresso geral do projeto</span><span>~72%</span>
+        </div>
+        <div class="total-bar-bg">
+          <div class="total-bar-fill" style="width: 72%"></div>
+        </div>
+      </div>
+
+      <div class="phases-list" id="phases-container"></div>
+    </div>
+
+    <script>
+      const PHASES_DATA = [
+        {
+          num: 0,
+          title: "Fase 0 — Setup & Base",
+          pct: 100,
+          color: "var(--color-done)",
+          note: "Base técnica 100% funcional. AppDbContextFactory permite rodar migrations sem API no ar. Docker sobe postgres + redis + api com health checks.",
+          sections: [
+            {
+              title: "Infraestrutura",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "Estrutura de projetos (Domain / Application / Repository / Infrastructure / Api)",
+                },
+                { status: "done", label: "EF Core 8 + Npgsql + PostgreSQL 16" },
+                {
+                  status: "done",
+                  label: "Docker Compose com postgres, redis e api",
+                },
+                {
+                  status: "done",
+                  label: "AppDbContextFactory para dotnet ef migrations",
+                },
+                {
+                  status: "done",
+                  label:
+                    "appsettings.json + appsettings.Development.json separados",
+                },
+              ],
+            },
+            {
+              title: "API",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "ExceptionHandlingMiddleware (ProblemDetails RFC 7807)",
+                },
+                { status: "done", label: "Serilog com CorrelationId enricher" },
+                { status: "done", label: "Swagger com X-Tenant-Id no header" },
+                {
+                  status: "done",
+                  label: "Pipeline behaviors: Logging, Performance, Validation",
+                },
+                {
+                  status: "done",
+                  label: "FluentValidation integrado ao MediatR",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          num: 1,
+          title: "Fase 1 — Multi-tenancy",
+          pct: 100,
+          color: "var(--color-done)",
+          note: "Cada request é validada contra o banco antes de chegar no controller. Global query filters no EF garantem isolamento em nível de ORM — não depende de WHERE manual nas queries.",
+          sections: [
+            {
+              title: "Domínio",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "Entidade Tenant (Name, Subdomain, Email, IsActive, DeletedAt)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "TenantEntity — base com TenantId para todas entidades tenant-scoped",
+                },
+                {
+                  status: "done",
+                  label: "TenantAccessException para violações de isolamento",
+                },
+              ],
+            },
+            {
+              title: "Infraestrutura",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "TenantResolutionMiddleware — valida X-Tenant-Id contra o banco",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Retorna 404 (não encontrado), 403 (inativo) ou 410 (deletado)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "HttpTenantContext lê do HttpContext.Items (pós-middleware)",
+                },
+                {
+                  status: "done",
+                  label: "Bypass para /api/v1/tenants, /swagger, /health",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Global query filters no AppDbContext por TenantId + soft delete",
+                },
+              ],
+            },
+            {
+              title: "CQRS",
+              items: [
+                { status: "done", label: "CreateTenantCommand + validator" },
+                { status: "done", label: "UpdateTenantCommand" },
+                { status: "done", label: "TenantsController" },
+              ],
+            },
+          ],
+        },
+        {
+          num: 2,
+          title: "Fase 2 — Catálogo & Inventory",
+          pct: 100,
+          color: "var(--color-done)",
+          note: "Optimistic concurrency via xmin do PostgreSQL — sem coluna extra, zero overhead. Dois clientes comprando o último item simultaneamente: um sucede, o outro recebe 409 Conflict.",
+          sections: [
+            {
+              title: "Domínio — Catálogo",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "Product com factory method, Publish(), Archive(), AddVariant()",
+                },
+                {
+                  status: "done",
+                  label:
+                    "ProductVariant com SKU único, StockQuantity, RowVersion (xmin)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "VariantAttribute — atributos livres (cor, tamanho) por variante",
+                },
+                {
+                  status: "done",
+                  label:
+                    "StockMovement — audit trail com QuantityBefore e QuantityAfter",
+                },
+                {
+                  status: "done",
+                  label:
+                    "AddStock(), DeductStock() com validação, AdjustStock()",
+                },
+                {
+                  status: "done",
+                  label: "StockDepletedEvent disparado quando estoque zera",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Category com auto-referência (parent/children) e SortOrder",
+                },
+              ],
+            },
+            {
+              title: "Domínio — Identity",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "Customer com múltiplos Addresses e controle de IsDefault",
+                },
+                {
+                  status: "done",
+                  label: "SetDefaultAddress() com validação de ownership",
+                },
+                {
+                  status: "done",
+                  label: "StripeCustomerId para sync com Stripe",
+                },
+              ],
+            },
+            {
+              title: "Repository",
+              items: [
+                {
+                  status: "done",
+                  label: "ProductVariantConfig com UseXminAsConcurrencyToken()",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Índices compostos (TenantId, Slug), (TenantId, Status), (TenantId, IsFeatured)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "CategoryConfig com self-reference e filtered index no Slug",
+                },
+                {
+                  status: "done",
+                  label:
+                    "CustomerConfig com filtered unique index no Email por tenant",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          num: 3,
+          title: "Fase 3 — Carrinho & Pedido",
+          pct: 100,
+          color: "var(--color-done)",
+          note: "Estoque deduzido APÓS confirmação de pagamento, não na criação do pedido. Evita bloqueio de inventário por clientes que abandonam o pagamento.",
+          sections: [
+            {
+              title: "Domínio — Commerce",
+              items: [
+                {
+                  status: "done",
+                  label:
+                    "Cart com expiração, AddItem(), UpdateItemQuantity(), RemoveItem()",
+                },
+                { status: "done", label: "CartItem com LineTotal calculado" },
+                {
+                  status: "done",
+                  label:
+                    "Order com máquina de estados (Pending → Processing → Shipped → Delivered)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "OrderItem com SKUSnapshot e ProductNameSnapshot (proteção histórica)",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Payment com RegisterRefund(), RefundedAmount, RefundableAmount",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Coupon com validação (expiração, maxUses, minOrderValue, DiscountType)",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          num: 4,
+          title: "Fase 4 — Pagamentos (Stripe)",
+          pct: 100,
+          color: "var(--color-done)",
+          note: "Idempotência em duas camadas: verificação em código + unique index no banco. Race condition entre webhooks: apenas um INSERT sucede.",
+          sections: [
+            {
+              title: "Domínio",
+              items: [
+                {
+                  status: "done",
+                  label: "StripeWebhookEvent — entidade de idempotência",
+                },
+                {
+                  status: "done",
+                  label: "Payment.RegisterRefund() — refund parcial e total",
+                },
+                {
+                  status: "done",
+                  label:
+                    "PaymentStatus.PartiallyRefunded — status intermediário",
+                },
+                {
+                  status: "done",
+                  label:
+                    "PaymentSucceededEvent, PaymentFailedEvent, PaymentRefundedEvent",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          num: 5,
+          title: "Fase 5 — Billing / SaaS",
+          pct: 15,
+          color: "var(--color-partial)",
+          note: "Domínio 100% pronto. Implementando camada de aplicação e integrações com Stripe Subscriptions.",
+          sections: [
+            {
+              title: "Domínio (completo)",
+              items: [
+                {
+                  status: "done",
+                  label: "Plan, Feature, PlanFeature com LimitValue",
+                },
+                {
+                  status: "done",
+                  label:
+                    "Subscription com Status, StartDate, EndDate, TrialEndDate",
+                },
+                { status: "done", label: "Fluent Mappings completos" },
+              ],
+            },
+            {
+              title: "Application (15% - em progresso)",
+              items: [
+                {
+                  status: "partial",
+                  label: "CreateSubscriptionCommand com validators",
+                },
+                { status: "todo", label: "CancelSubscriptionCommand" },
+                { status: "todo", label: "GetSubscriptionByTenantQuery" },
+                { status: "todo", label: "GetPlansQuery — listagem pública" },
+                { status: "todo", label: "GetPlanByIdQuery com features" },
+              ],
+            },
+            {
+              title: "Middleware de feature flags (pendente)",
+              items: [
+                {
+                  status: "todo",
+                  label: "SubscriptionFeatureAttribute para endpoints",
+                },
+                {
+                  status: "todo",
+                  label: "PlanFeatureMiddleware com 402 Payment Required",
+                },
+                { status: "todo", label: "Limite de produtos por plano" },
+                { status: "todo", label: "Cache da subscription (Redis)" },
+              ],
+            },
+          ],
+        },
+        {
+          num: 6,
+          title: "Fase 6 — Qualidade",
+          pct: 42,
+          color: "var(--color-partial)",
+          note: "Testes e behaviors existem. Faltam cache Redis, health checks e observabilidade estruturada.",
+          sections: [
+            {
+              title: "Testes (existente)",
+              items: [
+                {
+                  status: "done",
+                  label: "50+ testes de domínio e application",
+                },
+              ],
+            },
+            {
+              title: "Cache Redis (pendente)",
+              items: [
+                { status: "todo", label: "Cache de catálogo com TTL 5min" },
+                { status: "todo", label: "Cache de planos (TTL 1h)" },
+                { status: "todo", label: "Invalidação ao atualizar produto" },
+              ],
+            },
+          ],
+        },
+        {
+          num: 7,
+          title: "Fase 7 — Portfólio",
+          pct: 10,
+          color: "var(--color-initial)",
+          note: "README com decisões arquiteturais, diagramas e trade-offs vale mais que 20 features para recrutadores.",
+          sections: [
+            {
+              title: "README (pendente)",
+              items: [
+                {
+                  status: "todo",
+                  label: "Decisões arquiteturais com justificativa",
+                },
+                { status: "todo", label: "Diagramas de arquitetura e fluxos" },
+                { status: "todo", label: "Guia de configuração local" },
+                { status: "todo", label: "Trade-offs documentados" },
+              ],
+            },
+          ],
+        },
+      ];
+
+      function renderPhases() {
+        const container = document.getElementById("phases-container");
+        container.innerHTML = "";
+
+        PHASES_DATA.forEach((phase) => {
+          const phaseEl = createPhaseElement(phase);
+          container.appendChild(phaseEl);
+        });
+
+        // Auto-open Fase 5
+        togglePhase(5);
+      }
+
+      function createPhaseElement(phase) {
+        const el = document.createElement("div");
+        el.className = "phase";
+
+        const sectionsHtml = phase.sections
+          .map(
+            (section) => `
+      <div class="section-title">${section.title}</div>
+      <div class="items">
+        ${section.items
+          .map(
+            (item) => `
+          <span class="item ${item.status}">
+            <span class="dot dot-${item.status}"></span>
+            ${item.label}
+          </span>
+        `,
+          )
+          .join("")}
+      </div>
+    `,
+          )
+          .join("");
+
+        el.innerHTML = `
+      <div class="phase-header" onclick="togglePhase(${phase.num})" role="button" tabindex="0" aria-expanded="false">
+        <span class="phase-label">${phase.title}</span>
+        <div class="phase-bar-bg">
+          <div class="phase-bar-fill" style="width:${phase.pct}%;background:${phase.color}"></div>
+        </div>
+        <span class="phase-pct">${phase.pct}%</span>
+        <span class="chev" id="chev-${phase.num}">›</span>
+      </div>
+      <div class="phase-body" id="body-${phase.num}">
+        ${sectionsHtml}
+        ${phase.note ? `<div class="note">📌 ${phase.note}</div>` : ""}
+      </div>
+    `;
+
+        // Keyboard support
+        const header = el.querySelector(".phase-header");
+        header.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            togglePhase(phase.num);
+          }
+        });
+
+        return el;
+      }
+
+      function togglePhase(num) {
+        const body = document.getElementById("body-" + num);
+        const chev = document.getElementById("chev-" + num);
+        const header = body.previousElementSibling;
+
+        const isOpen = body.classList.toggle("open");
+        chev.classList.toggle("open", isOpen);
+        header.setAttribute("aria-expanded", isOpen);
+      }
+
+      // Initialize
+      renderPhases();
+    </script>
+  </body>
+</html>

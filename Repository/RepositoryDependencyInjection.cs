@@ -34,6 +34,7 @@ public static class RepositoryDependencyInjection
         services.AddScoped<IStripeWebhookEventRepository, StripeWebhookEventRepository>();
 
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<IPlanRepository, PlanRepository>();
 
         return services;
     }
