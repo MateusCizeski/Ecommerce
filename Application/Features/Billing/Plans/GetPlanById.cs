@@ -31,8 +31,7 @@ public class GetPlanByIdQueryHandler(IPlanRepository planRepo) : IRequestHandler
   public async Task<GetPlanByIdQueryResult> Handle(GetPlanByIdQuery query, CancellationToken ct)
   {
     var plan = await planRepo.GetByIdAsync(query.PlanId, ct)
-        ?? throw new NotFoundException($"Plano com ID '{query.PlanId}' não encontrado.");
-
+            ?? throw new NotFoundException("Plan", query.PlanId);
     return new GetPlanByIdQueryResult(
         plan.Id,
         plan.Name,

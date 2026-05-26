@@ -39,15 +39,18 @@ public class ProductVariantConfig : IEntityTypeConfiguration<ProductVariant>
          .WithOne()
          .HasForeignKey(a => a.ProductVariantId)
          .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasMany(v => v.StockMovements)
          .WithOne()
          .HasForeignKey(m => m.ProductVariantId)
          .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasIndex(v => v.SKU).IsUnique()
          .HasFilter("\"DeletedAt\" IS NULL");
-        
-        builder.UseXminAsConcurrencyToken();
+
+        builder.Property(v => v.RowVersion)
+            .HasColumnName("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

@@ -25,7 +25,7 @@ public record GetSubscriptionByTenantResult(
 
 public class GetSubscriptionByTenantQueryHandler(
     ISubscriptionRepository subscriptionRepo,
-    IHttpTenantContext tenantContext
+    ITenantContext tenantContext
 ) : IRequestHandler<GetSubscriptionByTenantQuery, GetSubscriptionByTenantResult?>
 {
   public async Task<GetSubscriptionByTenantResult?> Handle(GetSubscriptionByTenantQuery query, CancellationToken ct)
