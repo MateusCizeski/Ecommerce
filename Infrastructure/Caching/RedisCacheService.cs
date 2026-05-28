@@ -11,7 +11,7 @@ namespace Infrastructure.Caching
 
         public async Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
         {
-            try { var v = await _db.StringGetAsync(key); return v.HasValue ? JsonSerializer.Deserialize<T>(v!) : default; }
+            try { var v = await _db.StringGetAsync(key); return v.HasValue ? JsonSerializer.Deserialize<T>(v!.ToString()!) : default; }
             catch (Exception ex) { logger.LogWarning(ex, "Cache GET failed for {Key}", key); return default; }
         }
 

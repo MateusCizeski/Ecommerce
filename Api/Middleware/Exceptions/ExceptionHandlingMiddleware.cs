@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Application.Exceptions;
+using Ecommerce.Domain;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
 using static System.Net.Mime.MediaTypeNames;
@@ -19,7 +22,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
     {
         var (status, title, detail, errors) = ex switch
         {
-            Application.Common.Exceptions.ValidationException ve =>
+            Application.Exceptions.ValidationException ve =>
                 ((int)HttpStatusCode.UnprocessableEntity, "Validation failed", ve.Message, (object?)ve.Errors),
             NotFoundException nfe => (404, "Resource not found", nfe.Message, null),
             TenantAccessException tae => (403, "Access denied", tae.Message, null),

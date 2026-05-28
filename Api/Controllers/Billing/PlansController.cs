@@ -10,7 +10,6 @@ namespace Api.Controllers.Billing;
 [ApiController]
 [Route("api/v1/plans")]
 [Produces("application/json")]
-[AllowAnonymous] // Plans são públicos, não precisam autenticação de tenant
 public class PlansController(ISender sender) : ControllerBase
 {
   /// <summary>
