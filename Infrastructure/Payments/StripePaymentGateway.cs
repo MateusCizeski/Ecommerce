@@ -6,7 +6,7 @@ namespace Infrastructure.Payments
 {
     public class StripePaymentGateway(ILogger<StripePaymentGateway> logger) : IPaymentGateway
     {
-        public async Task<CreatePaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string customerId, CancellationToken ct = default)
+        public async Task<Application.Interfaces.CreatePaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string customerId, CancellationToken ct = default)
         {
             var options = new PaymentIntentCreateOptions
             {
@@ -34,7 +34,7 @@ namespace Infrastructure.Payments
 
         public async Task<string> CreateOrGetCustomerAsync(string email, string name, CancellationToken ct = default)
         {
-            var search = await new CustomerSearchService().SearchAsync(new CustomerSearchOptions { Query = $"email:'{email}'" }, cancellationToken: ct);
+            var search = await new CustomerService().SearchAsync(new CustomerSearchOptions { Query = $"email:'{email}'" }, cancellationToken: ct);
             if (search.Data.Count > 0) return search.Data[0].Id;
             var customer = await new CustomerService().CreateAsync(new CustomerCreateOptions { Email = email, Name = name }, cancellationToken: ct);
             return customer.Id;

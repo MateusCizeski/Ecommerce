@@ -1,5 +1,7 @@
-﻿using Application.Interfaces;
+﻿using Application;
+using Application.Interfaces;
 using Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Repository;
@@ -16,15 +18,15 @@ namespace Infrastructure.DependencyInjection
 
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
-            services.AddScoped<ICacheService, Services.RedisCacheService>();
+            services.AddScoped<ICacheService, Infrastructure.Caching.RedisCacheService>();
 
             StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"]
                 ?? throw new InvalidOperationException("Stripe:SecretKey is not configured.");
-            services.AddScoped<IPaymentGateway, Services.StripePaymentGateway>();
+            services.AddScoped<Application.IPaymentGateway, Services.StripePaymentGateway>();
 
-            services.AddHttpContextAccessor();
-            services.AddScoped<ITenantContext, Services.HttpTenantContext>();
-            services.AddScoped<IOrderNumberGenerator, Services.OrderNumberGenerator>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<ITenantContext, Infrastructure.MultiTenancy.HttpTenantContext>();
+            services.AddScoped<IOrderNumberGenerator, Infrastructure.Orders.OrderNumberGenerator>();
 
             return services;
         }

@@ -1,12 +1,12 @@
-using System.Configuration.Internal;
-using Application.Interfaces;
+using Application;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
 
 namespace Infrastructure.Services;
 
 public class StripePaymentGateway(
-    IConfigurationManagerHelper configuration,
+    IConfiguration configuration,
     ILogger<StripePaymentGateway> logger) : IPaymentGateway
 {
     private string WebhookSecret => configuration["Stripe:WebhookSecret"]
@@ -48,14 +48,14 @@ public class StripePaymentGateway(
         return new(
             refund.Status == "succeeded",
             refund.Id,
-            refund.Amount / 100m   // convert cents back to decimal
+            refund.Amount / 100m
         );
     }
 
     public async Task<string> CreateOrGetCustomerAsync(
         string email, string name, CancellationToken ct = default)
     {
-        var search = await new CustomerSearchService().SearchAsync(
+        var search = await new CustomerService().SearchAsync(
             new CustomerSearchOptions { Query = $"email:'{email}'" },
             cancellationToken: ct);
 

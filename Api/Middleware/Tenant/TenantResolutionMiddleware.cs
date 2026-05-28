@@ -1,4 +1,7 @@
-﻿namespace Api.Middleware.Tenant;
+﻿using Microsoft.EntityFrameworkCore;
+using Repository;
+
+namespace Api.Middleware.Tenant;
 
 public class TenantResolutionMiddleware(RequestDelegate next)
 {
@@ -27,8 +30,7 @@ public class TenantResolutionMiddleware(RequestDelegate next)
             return;
         }
 
-        var tenant = await db.Tenants.IgnoreQueryFilters()
-                                     .FirstOrDefaultAsync(t => t.Id == tenantId);
+        var tenant = await db.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantId);
 
         if (tenant is null) { await WriteProblem(context, 404, "Tenant not found", $"No tenant with id '{tenantId}' was found."); return; }
         if (!tenant.IsActive) { await WriteProblem(context, 403, "Tenant inactive", "This tenant account is currently inactive."); return; }
