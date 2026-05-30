@@ -30,6 +30,18 @@ public class SubscriptionsController(ISender sender) : ControllerBase
   }
 
   /// <summary>
+  /// Cancela a subscription ativa do tenant atual
+  /// </summary>
+  /// <response code="204">Subscription cancelada com sucesso</response>
+  /// <response code="404">Nenhuma subscription ativa encontrada</response>
+  [HttpPost("cancel")]
+  public async Task<IActionResult> Cancel(CancellationToken ct)
+  {
+    await sender.Send(new CancelSubscriptionCommand(), ct);
+    return NoContent();
+  }
+
+  /// <summary>
   /// Retorna a subscription ativa do tenant atual
   /// </summary>
   /// <response code="200">Subscription encontrada</response>

@@ -68,6 +68,49 @@ public class StripePaymentGateway(
         return customer.Id;
     }
 
+    public async Task<string> CreateStripeSubscriptionAsync(
+        string stripeCustomerId,
+        string planName,
+        decimal amount,
+        BillingCycle billingCycle,
+        CancellationToken ct = default)
+    {
+        var subscriptionOptions = new SubscriptionCreateOptions
+        {
+            Customer = stripeCustomerId,
+            Items = new List<SubscriptionItemOptions>
+            {
+                new SubscriptionItemOptions
+                {
+                    PriceData = new SubscriptionItemPriceDataOptions
+                    {
+                        Currency = "usd",
+                        UnitAmount = (long)(amount * 100),
+                        Recurring = new SubscriptionItemPriceDataRecurringOptions
+                        {
+                            Interval = billingCycle == BillingCycle.Yearly ? "year" : "month"
+                        },
+                        ProductData = new SubscriptionItemPriceDataProductDataOptions
+                        {
+                            Name = planName
+                        }
+                    }
+                }
+            }
+        };
+
+        var subscription = await new SubscriptionService().CreateAsync(subscriptionOptions, cancellationToken: ct);
+        return subscription.Id;
+    }
+
+    public async Task<bool> CancelStripeSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken ct = default)
+    {
+        var subscription = await new SubscriptionService().CancelAsync(stripeSubscriptionId, cancellationToken: ct);
+        return subscription.Status == "canceled" || subscription.Status == "canceled";
+    }
+
     /// <summary>
     /// Validates the Stripe-Signature header using the webhook secret.
     /// Throws StripeException if invalid (Stripe SDK handles the check).
@@ -82,9 +125,11 @@ public class StripePaymentGateway(
             "payment_intent.succeeded" => ParsePaymentIntentSucceeded(stripeEvent),
             "payment_intent.payment_failed" => ParsePaymentIntentFailed(stripeEvent),
             "charge.refunded" => ParseChargeRefunded(stripeEvent),
+            "customer.subscription.deleted" => ParseCustomerSubscriptionDeleted(stripeEvent),
+            "invoice.payment_failed" => ParseInvoicePaymentFailed(stripeEvent),
             _ => new StripeWebhookParseResult(
                 stripeEvent.Id, stripeEvent.Type,
-                string.Empty, null, null, null, payload)
+                string.Empty, null, null, null, null, null, stripeEvent.ToJson())
         };
     }
 
@@ -95,6 +140,8 @@ public class StripePaymentGateway(
             e.Id, e.Type,
             intent?.Id ?? string.Empty,
             intent?.LatestChargeId,
+            null,
+            null,
             intent?.Amount / 100m,
             null,
             e.ToJson());
@@ -108,6 +155,8 @@ public class StripePaymentGateway(
             intent?.Id ?? string.Empty,
             null,
             null,
+            null,
+            intent?.Amount / 100m,
             intent?.LastPaymentError?.Message,
             e.ToJson());
     }
@@ -119,8 +168,38 @@ public class StripePaymentGateway(
             e.Id, e.Type,
             charge?.PaymentIntentId ?? string.Empty,
             charge?.Id,
+            null,
+            charge?.Invoice?.CustomerId,
             charge?.AmountRefunded / 100m,
             null,
+            e.ToJson());
+    }
+
+    private static StripeWebhookParseResult ParseCustomerSubscriptionDeleted(Event e)
+    {
+        var stripeSubscription = e.Data.Object as Subscription;
+        return new(
+            e.Id, e.Type,
+            string.Empty,
+            null,
+            stripeSubscription?.Id,
+            stripeSubscription?.CustomerId,
+            null,
+            null,
+            e.ToJson());
+    }
+
+    private static StripeWebhookParseResult ParseInvoicePaymentFailed(Event e)
+    {
+        var invoice = e.Data.Object as Invoice;
+        return new(
+            e.Id, e.Type,
+            invoice?.PaymentIntentId ?? string.Empty,
+            invoice?.ChargeId,
+            invoice?.SubscriptionId,
+            invoice?.CustomerId,
+            invoice?.AmountDue / 100m,
+            invoice?.LastPaymentError?.Message,
             e.ToJson());
     }
 }

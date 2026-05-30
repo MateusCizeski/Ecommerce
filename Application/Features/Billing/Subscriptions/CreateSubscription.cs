@@ -3,6 +3,7 @@ using FluentValidation;
 using Domain.Interfaces;
 using Ecommerce.Domain;
 using Application.Exceptions;
+using Application.Interfaces;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace Application.Features.Billing.Subscriptions;
@@ -21,7 +22,8 @@ public record CreateSubscriptionResult(
     SubscriptionStatus Status,
     DateTime StartDate,
     DateTime EndDate,
-    DateTime? TrialEndDate
+    DateTime? TrialEndDate,
+    string? StripeSubscriptionId
 );
 
 public class CreateSubscriptionCommandValidator : AbstractValidator<CreateSubscriptionCommand>
@@ -42,13 +44,20 @@ public class CreateSubscriptionCommandValidator : AbstractValidator<CreateSubscr
 public class CreateSubscriptionCommandHandler(
     IPlanRepository planRepo,
     ISubscriptionRepository subscriptionRepo,
+    ITenantRepository tenantRepo,
     ITenantContext tenantContext,
-    IUnitOfWork uow
+    IPaymentGateway paymentGateway,
+    IUnitOfWork uow,
+    ICacheService cacheService
 ) : IRequestHandler<CreateSubscriptionCommand, CreateSubscriptionResult>
 {
+  private static string BuildSubscriptionCacheKey(Guid tenantId) => $"tenant:{tenantId}:subscription:active";
+
   public async Task<CreateSubscriptionResult> Handle(CreateSubscriptionCommand cmd, CancellationToken ct)
   {
     var tenantId = tenantContext.TenantId;
+    var tenant = await tenantRepo.GetByIdAsync(tenantId, ct)
+                 ?? throw new NotFoundException("Tenant", tenantId);
 
     // 1. Verifica se o plano existe
     var plan = await planRepo.GetByIdAsync(cmd.PlanId, ct)
@@ -56,23 +65,31 @@ public class CreateSubscriptionCommandHandler(
 
     if (!plan.IsActive)
       throw new ValidationException(new[] { new FluentValidation.Results.ValidationFailure("PlanId", "O plano selecionado não está disponível.") });
+
     // 2. Verifica se o tenant já tem uma subscription ativa
     var existingSubscription = await subscriptionRepo.GetActiveByTenantAsync(tenantId, ct);
     if (existingSubscription is not null)
       throw new ConflictException("O tenant já possui uma subscription ativa. Cancele a anterior primeiro.");
 
-    // 3. Cria a subscription
+    // 3. Cria ou recupera o Stripe Customer e a Stripe Subscription
+    var stripeCustomerId = await paymentGateway.CreateOrGetCustomerAsync(tenant.Email, tenant.Name, ct);
+    var stripeSubscriptionId = await paymentGateway.CreateStripeSubscriptionAsync(
+        stripeCustomerId,
+        plan.Name,
+        plan.Price,
+        plan.BillingCycle,
+        ct);
+
+    // 4. Cria a subscription local
     var now = DateTime.UtcNow;
     var startDate = now;
 
-    // Define a data de término com base no ciclo de cobrança do plano
     var endDate = plan.BillingCycle switch
     {
       BillingCycle.Yearly => now.AddYears(1),
       _ => now.AddMonths(1)
     };
 
-    // Define data de fim do trial se houver
     DateTime? trialEndDate = cmd.TrialDays > 0 ? now.AddDays(cmd.TrialDays) : null;
 
     var subscription = Subscription.Create(
@@ -82,10 +99,11 @@ public class CreateSubscriptionCommandHandler(
         endDate,
         trialEndDate
     );
+    subscription.SetStripeId(stripeSubscriptionId);
 
-    // 4. Persiste
     await subscriptionRepo.AddAsync(subscription, ct);
     await uow.CommitAsync(ct);
+    await cacheService.RemoveAsync(BuildSubscriptionCacheKey(tenantId), ct);
 
     return new CreateSubscriptionResult(
         subscription.Id,
@@ -93,7 +111,8 @@ public class CreateSubscriptionCommandHandler(
         subscription.Status,
         subscription.StartDate,
         subscription.EndDate,
-        subscription.TrialEndDate
+        subscription.TrialEndDate,
+        subscription.StripeSubscriptionId
     );
   }
 }
