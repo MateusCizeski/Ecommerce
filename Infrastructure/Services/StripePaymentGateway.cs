@@ -1,4 +1,5 @@
 using Application;
+using Ecommerce.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
@@ -90,10 +91,7 @@ public class StripePaymentGateway(
                         {
                             Interval = billingCycle == BillingCycle.Yearly ? "year" : "month"
                         },
-                        ProductData = new SubscriptionItemPriceDataProductDataOptions
-                        {
-                            Name = planName
-                        }
+                                        Product = planName
                     }
                 }
             }
@@ -177,7 +175,7 @@ public class StripePaymentGateway(
 
     private static StripeWebhookParseResult ParseCustomerSubscriptionDeleted(Event e)
     {
-        var stripeSubscription = e.Data.Object as Subscription;
+        var stripeSubscription = e.Data.Object as Stripe.Subscription;
         return new(
             e.Id, e.Type,
             string.Empty,
@@ -199,7 +197,7 @@ public class StripePaymentGateway(
             invoice?.SubscriptionId,
             invoice?.CustomerId,
             invoice?.AmountDue / 100m,
-            invoice?.LastPaymentError?.Message,
+            invoice?.LastFinalizationError?.Message,
             e.ToJson());
     }
 }
