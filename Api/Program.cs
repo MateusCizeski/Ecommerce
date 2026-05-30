@@ -18,6 +18,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseGlobalExceptionHandling();
 app.UseTenantResolution();
+app.UseMiddleware<Api.Middleware.Billing.PlanFeatureMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

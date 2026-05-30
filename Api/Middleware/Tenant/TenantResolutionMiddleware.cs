@@ -6,7 +6,7 @@ namespace Api.Middleware.Tenant;
 public class TenantResolutionMiddleware(RequestDelegate next)
 {
     private static readonly HashSet<string> _bypass =
-        ["/api/v1/tenants", "/swagger", "/health"];
+        ["/api/v1/tenants", "/swagger", "/health", "/api/v1/webhooks/stripe"];
 
     public async Task InvokeAsync(HttpContext context, AppDbContext db)
     {

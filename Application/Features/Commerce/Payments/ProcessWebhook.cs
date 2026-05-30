@@ -1,3 +1,5 @@
+using Application.Interfaces;
+
 namespace Application;
 
 public record ProcessStripeWebhookCommand(
@@ -10,11 +12,15 @@ public record WebhookProcessResult(bool Processed, string EventType, string? Rea
 public class ProcessStripeWebhookCommandHandler(
     IStripeWebhookEventRepository webhookRepo,
     IOrderRepository orderRepo,
+    ISubscriptionRepository subscriptionRepo,
     IPaymentGateway paymentGateway,
     IUnitOfWork uow,
+    ICacheService cacheService,
     ILogger<ProcessStripeWebhookCommandHandler> logger)
     : IRequestHandler<ProcessStripeWebhookCommand, WebhookProcessResult>
 {
+    private static string BuildSubscriptionCacheKey(string tenantId) => $"tenant:{tenantId}:subscription:active";
+
     public async Task<WebhookProcessResult> Handle(
         ProcessStripeWebhookCommand cmd, CancellationToken ct)
     {
@@ -79,6 +85,14 @@ public class ProcessStripeWebhookCommandHandler(
 
             case "charge.refunded":
                 await HandleChargeRefundedAsync(parsed, ct);
+                break;
+
+            case "customer.subscription.deleted":
+                await HandleSubscriptionDeletedAsync(parsed, ct);
+                break;
+
+            case "invoice.payment_failed":
+                await HandleInvoicePaymentFailedAsync(parsed, ct);
                 break;
 
             default:
@@ -152,6 +166,45 @@ public class ProcessStripeWebhookCommandHandler(
         var refundAmount = parsed.Amount ?? payment.Amount;
         payment.RegisterRefund(refundAmount);
         await uow.CommitAsync(ct);
+    }
+
+    private async Task HandleSubscriptionDeletedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.StripeSubscriptionId)) return;
+
+        var subscription = await subscriptionRepo.GetByStripeSubscriptionIdAsync(parsed.StripeSubscriptionId, ct);
+        if (subscription is null)
+        {
+            logger.LogWarning("No subscription found for Stripe subscription {StripeSubscriptionId}", parsed.StripeSubscriptionId);
+            return;
+        }
+
+        if (subscription.Status == SubscriptionStatus.Cancelled)
+            return;
+
+        subscription.Cancel();
+        await ClearSubscriptionCacheAsync(subscription.TenantId, ct);
+        await uow.CommitAsync(ct);
+    }
+
+    private async Task HandleInvoicePaymentFailedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.StripeSubscriptionId)) return;
+
+        var subscription = await subscriptionRepo.GetByStripeSubscriptionIdAsync(parsed.StripeSubscriptionId, ct);
+        if (subscription is null) return;
+
+        if (subscription.Status == SubscriptionStatus.Cancelled || subscription.Status == SubscriptionStatus.Expired)
+            return;
+
+        subscription.MarkPastDue();
+        await ClearSubscriptionCacheAsync(subscription.TenantId, ct);
+        await uow.CommitAsync(ct);
+    }
+
+    private async Task ClearSubscriptionCacheAsync(Guid tenantId, CancellationToken ct)
+    {
+        await cacheService.RemoveAsync(BuildSubscriptionCacheKey(tenantId.ToString()), ct);
     }
 
     private async Task<Order?> FindOrderByPaymentIntentAsync(string paymentIntentId, CancellationToken ct)

@@ -41,7 +41,25 @@ public class Subscription : BaseEntity
         AddDomainEvent(new SubscriptionCancelledEvent(Id, TenantId));
     }
 
-    public void SetStripeId(string id) { StripeSubscriptionId = id; MarkUpdated(); }
+    public void MarkPastDue()
+    {
+        if (Status == SubscriptionStatus.Cancelled)
+            throw new DomainException("Cannot mark a cancelled subscription as past due.");
 
-    public bool IsActive() => Status is SubscriptionStatus.Active or SubscriptionStatus.Trialing && EndDate > DateTime.UtcNow;
+        if (Status == SubscriptionStatus.PastDue)
+            return;
+
+        Status = SubscriptionStatus.PastDue;
+        MarkUpdated();
+    }
+
+    public void SetStripeId(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) throw new DomainException("Stripe subscription ID cannot be empty.");
+        StripeSubscriptionId = id;
+        MarkUpdated();
+    }
+
+    public bool IsActive()
+        => (Status is SubscriptionStatus.Active or SubscriptionStatus.Trialing) && EndDate > DateTime.UtcNow;
 }

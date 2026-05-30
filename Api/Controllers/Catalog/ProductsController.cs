@@ -17,6 +17,7 @@ namespace Api.Controllers.Catalog
             => Ok(await sender.Send(new GetProductByIdQuery(id), ct));
 
         [HttpPost]
+        [Api.Middleware.Billing.SubscriptionFeature("max_products")]
         public async Task<IActionResult> Create([FromBody] CreateProductCommand cmd, CancellationToken ct)
         { var id = await sender.Send(cmd, ct); return CreatedAtAction(nameof(GetById), new { id }, id); }
 

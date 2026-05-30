@@ -18,6 +18,17 @@ public interface IPaymentGateway
         string email, string name,
         CancellationToken ct = default);
 
+    Task<string> CreateStripeSubscriptionAsync(
+        string stripeCustomerId,
+        string planName,
+        decimal amount,
+        BillingCycle billingCycle,
+        CancellationToken ct = default);
+
+    Task<bool> CancelStripeSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken ct = default);
+
     /// <summary>
     /// Validates the Stripe-Signature header and deserializes the event.
     /// Throws if the signature is invalid (tampered or wrong secret).
@@ -35,6 +46,8 @@ public record StripeWebhookParseResult(
     string EventType,
     string PaymentIntentId,
     string? ChargeId,
+    string? StripeSubscriptionId,
+    string? CustomerId,
     decimal? Amount,
     string? FailureMessage,
     string RawPayload
