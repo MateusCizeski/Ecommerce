@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface ICustomerRepository
 {
@@ -10,4 +10,5 @@ public interface ICustomerRepository
     Task AddAsync(Customer customer, CancellationToken ct = default);
     IQueryable<Customer> Query(Guid tenantId);
 }
+
 

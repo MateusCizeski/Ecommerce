@@ -22,6 +22,8 @@ public class Plan : BaseEntity
     {
         if (_planFeatures.Any(pf => pf.FeatureId == feature.Id))
             throw new DomainException($"Feature '{feature.Key}' is already assigned to this plan.");
+
         _planFeatures.Add(PlanFeature.Create(Id, feature.Id, limitValue));
+        MarkUpdated();
     }
 }

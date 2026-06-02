@@ -1,6 +1,6 @@
 using Application.Exceptions;
 using Application.Features.Tenancy.Tenants;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -55,3 +55,4 @@ public sealed class TenantCommandHandlerTests
     uow.Verify(x => x.CommitAsync(default), Times.Once);
   }
 }
+

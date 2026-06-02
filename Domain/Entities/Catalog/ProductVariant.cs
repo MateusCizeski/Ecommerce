@@ -32,7 +32,12 @@ public class ProductVariant : BaseEntity
     };
 
     public void AddAttribute(string attributeName, string attributeValue)
-    => _attributes.Add(VariantAttribute.Create(Id, attributeName, attributeValue));
+    {
+        if (_attributes.Any(a => string.Equals(a.Name, attributeName, StringComparison.OrdinalIgnoreCase)))
+            throw new DomainException($"Attribute '{attributeName}' already exists for this variant.");
+
+        _attributes.Add(VariantAttribute.Create(Id, attributeName, attributeValue));
+    }
 
     public StockMovement AddStock(int quantity, string reason = "Purchase")
     {
@@ -54,10 +59,11 @@ public class ProductVariant : BaseEntity
     private StockMovement RegisterMovement(int qty, StockMovementType type, string reason, Guid? orderItemId = null)
     {
         var movement = StockMovement.Create(Id, qty, StockQuantity, StockQuantity + qty, type, reason, orderItemId);
-        
+
         StockQuantity += qty;
         _stockMovements.Add(movement);
-        
+        MarkUpdated();
+
         if (StockQuantity == 0)
         {
             AddDomainEvent(new StockDepletedEvent(Id, ProductId));

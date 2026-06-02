@@ -13,13 +13,19 @@ public class OrderItem : BaseEntity
     protected OrderItem() { }
 
     public static OrderItem Create(Guid variantId, string sku, string productName,
-    int quantity, decimal unitPrice) => new()
+    int quantity, decimal unitPrice)
     {
-        ProductVariantId = variantId,
-        SKUSnapshot = sku,
-        ProductNameSnapshot = productName,
-        Quantity = quantity,
-        UnitPrice = unitPrice,
-        TotalPrice = unitPrice * quantity
-    };
+        if (quantity <= 0) throw new DomainException("Item quantity must be positive.");
+        if (unitPrice < 0) throw new DomainException("Unit price cannot be negative.");
+
+        return new OrderItem
+        {
+            ProductVariantId = variantId,
+            SKUSnapshot = sku.Trim(),
+            ProductNameSnapshot = productName.Trim(),
+            Quantity = quantity,
+            UnitPrice = unitPrice,
+            TotalPrice = unitPrice * quantity
+        };
+    }
 }

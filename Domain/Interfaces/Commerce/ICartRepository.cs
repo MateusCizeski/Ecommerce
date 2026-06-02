@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface ICartRepository
 {
@@ -8,3 +8,4 @@ public interface ICartRepository
     Task<Cart?> GetActiveByCustomerAsync(Guid tenantId, Guid customerId, CancellationToken ct = default);
     Task AddAsync(Cart cart, CancellationToken ct = default);
 }
+

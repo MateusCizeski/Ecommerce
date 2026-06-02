@@ -1,6 +1,6 @@
-﻿using Application;
+using Application;
 using Application.Interfaces;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,3 +32,4 @@ namespace Infrastructure.DependencyInjection
         }
     }
 }
+

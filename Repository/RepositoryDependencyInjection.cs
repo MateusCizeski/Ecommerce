@@ -1,5 +1,5 @@
-﻿using Domain;
-using Domain.Interfaces;
+using Domain;
+using Ecommerce.Domain.Interfaces;
 using Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,4 +39,5 @@ public static class RepositoryDependencyInjection
         return services;
     }
 }
+
 

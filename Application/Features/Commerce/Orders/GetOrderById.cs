@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Features.Commerce.Orders.DTOs;
 using PaymentDto = Application.Features.Commerce.Orders.DTOs.PaymentDto;
 

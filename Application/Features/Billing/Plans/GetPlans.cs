@@ -1,6 +1,6 @@
 using MediatR;
 using FluentValidation;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using Application.Common;
 using Application.Exceptions;
@@ -49,3 +49,4 @@ public class GetPlansQueryHandler(IPlanRepository planRepo) : IRequestHandler<Ge
     )).ToList();
   }
 }
+

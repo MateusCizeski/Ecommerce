@@ -17,9 +17,12 @@ public class Subscription : BaseEntity
 
     public static Subscription Create(Guid tenantId, Plan plan, DateTime startDate, DateTime endDate, DateTime? trialEndDate = null)
     {
+        if (plan is null) throw new DomainException("Plan is required.");
         if (endDate <= startDate) throw new DomainException("End date must be after start date.");
+        if (trialEndDate.HasValue && trialEndDate.Value < startDate)
+            throw new DomainException("Trial end date must be on or after the subscription start date.");
 
-        var sub = new Subscription
+        var subscription = new Subscription
         {
             TenantId = tenantId,
             PlanId = plan.Id,
@@ -28,8 +31,8 @@ public class Subscription : BaseEntity
             EndDate = endDate,
             TrialEndDate = trialEndDate
         };
-        sub.AddDomainEvent(new SubscriptionCreatedEvent(sub.Id, tenantId, plan.Id));
-        return sub;
+        subscription.AddDomainEvent(new SubscriptionCreatedEvent(subscription.Id, tenantId, plan.Id));
+        return subscription;
     }
 
     public void Cancel()

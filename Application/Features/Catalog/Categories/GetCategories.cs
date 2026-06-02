@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Application.Features.Catalog.Categories.DTOs;
 

@@ -1,7 +1,8 @@
-﻿namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface IUnitOfWork
 {
     Task<int> CommitAsync(CancellationToken ct = default);
     Task RollbackAsync(CancellationToken ct = default);
 }
+

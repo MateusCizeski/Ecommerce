@@ -48,16 +48,24 @@ public class Product : TenantEntity
     {
         if (!_variants.Any(v => v.IsActive))
             throw new DomainException("Cannot publish a product without active variants.");
+
         Status = ProductStatus.Active;
         MarkUpdated();
     }
 
-    public void Archive() { Status = ProductStatus.Archived; MarkUpdated(); }
+    public void Archive()
+    {
+        Status = ProductStatus.Archived;
+        MarkUpdated();
+    }
 
     public void Update(string name, string slug, decimal basePrice, Guid categoryId,
     string? description, bool isFeatured)
     {
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Product name is required.");
+        if (string.IsNullOrWhiteSpace(slug)) throw new DomainException("Product slug is required.");
         if (basePrice < 0) throw new DomainException("Base price cannot be negative.");
+
         Name = name.Trim();
         Slug = slug.Trim().ToLowerInvariant();
         BasePrice = basePrice;

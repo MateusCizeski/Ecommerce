@@ -17,13 +17,18 @@ public class Payment : BaseEntity
 
     protected Payment() { }
 
-    internal static Payment Create(Guid orderId, PaymentMethod method, decimal amount, string currency) => new()
+    internal static Payment Create(Guid orderId, PaymentMethod method, decimal amount, string currency)
     {
-        OrderId = orderId,
-        Method = method,
-        Amount = amount,
-        Currency = currency
-    };
+        if (amount <= 0) throw new DomainException("Payment amount must be positive.");
+        if (string.IsNullOrWhiteSpace(currency)) throw new DomainException("Currency is required.");
+
+        return new Payment
+        {
+            OrderId = orderId,
+            Method = method,
+            Amount = amount,
+            Currency = currency.Trim().ToUpperInvariant()
+        };
 
     public void MarkSucceeded(string chargeId, string gatewayResponse)
     {

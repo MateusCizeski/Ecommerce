@@ -36,6 +36,9 @@ public class Category : TenantEntity
 
     public void Update(string name, string slug, string? description, int sortOrder)
     {
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Category name is required.");
+        if (string.IsNullOrWhiteSpace(slug)) throw new DomainException("Category slug is required.");
+
         Name = name.Trim();
         Slug = slug.Trim().ToLowerInvariant();
         Description = description?.Trim();

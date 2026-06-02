@@ -7,9 +7,10 @@ global using FluentValidation;
 global using MediatR;
 global using Microsoft.Extensions.Logging;
 global using Domain;
-global using Domain.Interfaces;
+global using Ecommerce.Domain.Interfaces;
 global using Ecommerce.Domain;
 global using Application;
 global using Application.Exceptions;
 global using Application.Interfaces;
 global using Application.Common;
+

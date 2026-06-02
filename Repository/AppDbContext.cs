@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Repository.SettingsEF;
 using Microsoft.EntityFrameworkCore;
 
@@ -102,3 +102,4 @@ public class AppDbContext : DbContext
             await _mediator!.Publish(domainEvent, ct);
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 
 namespace Repository;
 
@@ -21,3 +21,4 @@ public class UnitOfWork : IUnitOfWork
         return Task.CompletedTask;
     }
 }
+

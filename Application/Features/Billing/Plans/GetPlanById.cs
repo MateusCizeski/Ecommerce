@@ -1,5 +1,5 @@
 using MediatR;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Exceptions;
 
 namespace Application.Features.Billing.Plans;
@@ -50,3 +50,4 @@ public class GetPlanByIdQueryHandler(IPlanRepository planRepo) : IRequestHandler
     );
   }
 }
+

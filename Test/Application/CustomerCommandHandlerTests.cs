@@ -1,6 +1,6 @@
 using Application;
 using Application.Exceptions;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -95,3 +95,4 @@ public sealed class CustomerCommandHandlerTests
     public string Subdomain { get; }
   }
 }
+

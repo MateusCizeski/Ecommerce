@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -23,3 +23,4 @@ public class CartRepository : ICartRepository
         => await _db.Carts.Include(c => c.Items)
                           .FirstOrDefaultAsync(c => c.Id == id, ct);
 }
+

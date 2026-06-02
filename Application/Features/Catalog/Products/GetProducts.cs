@@ -1,5 +1,5 @@
-﻿using Application.Features.Catalog.Products.DTOs;
-using Domain.Interfaces;
+using Application.Features.Catalog.Products.DTOs;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

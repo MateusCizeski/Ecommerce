@@ -1,5 +1,5 @@
 using MediatR;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Exceptions;
 using Application.Interfaces;
 
@@ -45,3 +45,4 @@ public class CancelSubscriptionCommandHandler(
     return new CancelSubscriptionResult(true, stripeCancelled, subscription.CancelledAt ?? DateTime.UtcNow);
   }
 }
+

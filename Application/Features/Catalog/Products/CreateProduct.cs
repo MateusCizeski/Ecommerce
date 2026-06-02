@@ -1,7 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using FluentValidation;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Exceptions;
 
 namespace Application.Features.Catalog.Products;

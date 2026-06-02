@@ -1,4 +1,4 @@
-﻿namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface ICurrentUser
 {
@@ -6,3 +6,4 @@ public interface ICurrentUser
     string? Email { get; }
     bool IsAuthenticated { get; }
 }
+

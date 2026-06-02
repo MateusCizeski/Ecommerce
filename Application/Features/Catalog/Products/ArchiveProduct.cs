@@ -1,4 +1,4 @@
-﻿using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using MediatR;
 

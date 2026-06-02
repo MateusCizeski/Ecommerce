@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface ISubscriptionRepository
 {
@@ -8,3 +8,4 @@ public interface ISubscriptionRepository
     Task<Subscription?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken ct = default);
     Task AddAsync(Subscription subscription, CancellationToken ct = default);
 }
+

@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -15,3 +15,4 @@ public class CouponRepository : ICouponRepository
     public async Task<Coupon?> GetByCodeAsync(Guid tenantId, string code, CancellationToken ct = default)
         => await _db.Coupons.FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Code == code, ct);
 }
+

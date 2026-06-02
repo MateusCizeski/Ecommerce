@@ -1,5 +1,5 @@
 using MediatR;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Exceptions;
 using Ecommerce.Domain;
 
@@ -50,3 +50,4 @@ public class GetSubscriptionByTenantQueryHandler(
     );
   }
 }
+

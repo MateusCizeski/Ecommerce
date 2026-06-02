@@ -1,6 +1,6 @@
 using MediatR;
 using FluentValidation;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using Application.Exceptions;
 using Application.Interfaces;
@@ -116,3 +116,4 @@ public class CreateSubscriptionCommandHandler(
     );
   }
 }
+

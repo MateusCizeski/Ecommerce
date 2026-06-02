@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces
+namespace Ecommerce.Domain.Interfaces
 {
     public interface ICategoryRepository
     {
@@ -10,3 +10,4 @@ namespace Domain.Interfaces
         IQueryable<Category> Query(Guid tenantId);
     }
 }
+

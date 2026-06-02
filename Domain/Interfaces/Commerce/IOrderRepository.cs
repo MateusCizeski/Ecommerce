@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface IOrderRepository
 {
@@ -10,3 +10,4 @@ public interface IOrderRepository
     Task<Order?> GetByPaymentIntentIdAsync(string paymentIntentId, CancellationToken ct = default);
     Task<Order?> GetByChargeIdAsync(string chargeId, CancellationToken ct = default);
 }
+

@@ -1,5 +1,5 @@
-﻿using Application.Exceptions;
-using Domain.Interfaces;
+using Application.Exceptions;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Infrastructure.MultiTenancy
@@ -33,3 +33,4 @@ namespace Infrastructure.MultiTenancy
         }
     }
 }
+

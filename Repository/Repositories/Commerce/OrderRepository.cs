@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -36,3 +36,4 @@ public class OrderRepository : IOrderRepository
         => _db.Orders.Include(o => o.Items)
                      .Where(o => o.TenantId == tenantId);
 }
+
