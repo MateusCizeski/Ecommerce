@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -27,3 +27,4 @@ public class SubscriptionRepository : ISubscriptionRepository
                     .Include(s => s.Plan).ThenInclude(p => p.PlanFeatures).ThenInclude(pf => pf.Feature)
                     .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSubscriptionId, ct);
 }
+

@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Interfaces;
 using Application.Exceptions;
 
@@ -22,3 +22,4 @@ public class ConfirmOrderPaymentCommandHandler(IOrderRepository orderRepo, IPaym
         await uow.CommitAsync(ct);
     }
 }
+

@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories
@@ -28,3 +28,4 @@ namespace Repository.Repositories
             => await _db.Products.AnyAsync(p => p.TenantId == tenantId && p.Slug == slug, ct);
     }
 }
+

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Application.Interfaces;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Ecommerce.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -113,3 +113,4 @@ public class PlanFeatureMiddleware
 
   private sealed record CachedPlanFeature(string FeatureKey, string? LimitValue);
 }
+

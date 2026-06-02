@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Application.Features.Commerce.Orders.DTOs;
 
@@ -20,3 +20,4 @@ public class GetOrdersQueryHandler(IOrderRepository orderRepo, ITenantContext te
         return new PagedResult<OrderListItemDto>(items, total, q.Page, q.PageSize);
     }
 }
+

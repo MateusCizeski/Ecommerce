@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -24,3 +24,4 @@ public class TenantRepository : ITenantRepository
     public async Task AddAsync(Tenant tenant, CancellationToken ct = default)
         => await _db.Tenants.AddAsync(tenant, ct);
 }
+

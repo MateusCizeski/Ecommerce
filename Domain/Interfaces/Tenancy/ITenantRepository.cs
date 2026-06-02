@@ -1,6 +1,6 @@
-﻿using Ecommerce.Domain;
+using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface ITenantRepository
 {
@@ -9,3 +9,4 @@ public interface ITenantRepository
     Task<bool> SubdomainExistsAsync(string subdomain, CancellationToken ct = default);
     Task AddAsync(Tenant tenant, CancellationToken ct = default);
 }
+

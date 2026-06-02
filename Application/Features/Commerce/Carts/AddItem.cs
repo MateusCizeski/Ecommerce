@@ -1,7 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
 using FluentValidation;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Features.Commerce.Cart.DTOs;
 
 namespace Application.Features.Commerce.Cart;

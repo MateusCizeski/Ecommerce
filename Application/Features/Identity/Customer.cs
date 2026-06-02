@@ -1,7 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
 using FluentValidation;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Exceptions;
 using Microsoft.EntityFrameworkCore;
 

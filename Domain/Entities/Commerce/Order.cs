@@ -39,20 +39,30 @@ public class Order : TenantEntity
         if (!itemList.Any())
             throw new DomainException("Order must have at least one item.");
 
+        if (string.IsNullOrWhiteSpace(orderNumber))
+            throw new DomainException("Order number is required.");
+
+        if (shippingAmount < 0) throw new DomainException("Shipping amount cannot be negative.");
+        if (taxAmount < 0) throw new DomainException("Tax amount cannot be negative.");
+        if (discountAmount < 0) throw new DomainException("Discount amount cannot be negative.");
+
         var subtotal = itemList.Sum(i => i.TotalPrice);
+        var totalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
+        if (totalAmount < 0) throw new DomainException("Total amount cannot be negative.");
+
         var order = new Order
         {
             TenantId = tenantId,
             CustomerId = customerId,
             ShippingAddressId = shippingAddressId,
-            OrderNumber = orderNumber,
+            OrderNumber = orderNumber.Trim(),
             Subtotal = subtotal,
             ShippingAmount = shippingAmount,
             TaxAmount = taxAmount,
             DiscountAmount = discountAmount,
-            TotalAmount = subtotal + shippingAmount + taxAmount - discountAmount,
+            TotalAmount = totalAmount,
             CouponId = couponId,
-            Notes = notes
+            Notes = notes?.Trim()
         };
 
         foreach (var item in itemList) order._items.Add(item);
@@ -96,13 +106,15 @@ public class Order : TenantEntity
         if (Status is OrderStatus.Shipped or OrderStatus.Delivered)
             throw new DomainException("Cannot cancel a shipped or delivered order.");
 
+        var wasProcessing = Status == OrderStatus.Processing;
+
         Status = OrderStatus.Cancelled;
-        Notes = reason;
+        Notes = reason?.Trim();
         MarkUpdated();
 
         AddDomainEvent(new OrderCancelledEvent(Id, TenantId, CustomerId));
 
-        if (Status == OrderStatus.Processing)
+        if (wasProcessing)
         {
             var cancelledItems = _items
                 .Select(i => new OrderCancelledItem(i.ProductVariantId, i.Quantity))

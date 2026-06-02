@@ -13,14 +13,19 @@ public class StockMovement : BaseEntity
     protected StockMovement() { }
 
     internal static StockMovement Create(Guid variantId, int qty, int before, int after,
-    StockMovementType type, string reason, Guid? orderItemId) => new()
+    StockMovementType type, string reason, Guid? orderItemId)
     {
-        ProductVariantId = variantId,
-        Quantity = qty,
-        QuantityBefore = before,
-        QuantityAfter = after,
-        MovementType = type,
-        Reason = reason,
-        OrderItemId = orderItemId
-    };
+        if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Stock movement reason is required.");
+
+        return new StockMovement
+        {
+            ProductVariantId = variantId,
+            Quantity = qty,
+            QuantityBefore = before,
+            QuantityAfter = after,
+            MovementType = type,
+            Reason = reason.Trim(),
+            OrderItemId = orderItemId
+        };
+    }
 }

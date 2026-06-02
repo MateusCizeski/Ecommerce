@@ -17,10 +17,12 @@ public class Coupon : TenantEntity
     public static Coupon Create(Guid tenantId, string code, DiscountType discountType, decimal discountValue,
     decimal? minOrderValue = null, int? maxUses = null, DateTime? validFrom = null, DateTime? validUntil = null)
     {
-        if (discountValue <= 0)
-            throw new DomainException("Discount value must be positive.");
+        if (string.IsNullOrWhiteSpace(code)) throw new DomainException("Coupon code is required.");
+        if (discountValue <= 0) throw new DomainException("Discount value must be positive.");
         if (discountType == DiscountType.Percentage && discountValue > 100)
             throw new DomainException("Percentage discount cannot exceed 100.");
+        if (validFrom.HasValue && validUntil.HasValue && validUntil < validFrom)
+            throw new DomainException("Coupon expiration must be after the valid-from date.");
 
         return new Coupon
         {
@@ -55,8 +57,11 @@ public class Coupon : TenantEntity
 
     public void Redeem()
     {
+        if (!IsValid(0))
+            throw new DomainException("Coupon is not valid.");
         if (MaxUses.HasValue && UsedCount >= MaxUses)
             throw new DomainException("Coupon usage limit reached.");
+
         UsedCount++;
     }
 }

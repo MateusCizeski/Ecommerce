@@ -48,10 +48,18 @@ public class Customer : TenantEntity
         target.SetAsDefault();
     }
 
-    public void SetStripeCustomerId(string id) { StripeCustomerId = id; MarkUpdated(); }
+    public void SetStripeCustomerId(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) throw new DomainException("Stripe customer identifier is required.");
+        StripeCustomerId = id.Trim();
+        MarkUpdated();
+    }
 
     public void Update(string firstName, string lastName, string? phone)
     {
+        if (string.IsNullOrWhiteSpace(firstName)) throw new DomainException("First name is required.");
+        if (string.IsNullOrWhiteSpace(lastName)) throw new DomainException("Last name is required.");
+
         FirstName = firstName.Trim();
         LastName = lastName.Trim();
         Phone = phone?.Trim();

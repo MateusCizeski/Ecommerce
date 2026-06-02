@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Application.Features.Commerce.Cart.DTOs;
 
 namespace Application.Features.Commerce.Cart;
@@ -24,3 +24,4 @@ public class GetOrCreateCartCommandHandler(ICartRepository cartRepo, ICustomerRe
         cart.Items.Select(i => new CartItemDto(i.Id, i.ProductVariantId, string.Empty, string.Empty, i.Quantity, i.UnitPrice, i.LineTotal)),
         cart.Status.ToString(), cart.ExpiresAt);
 }
+

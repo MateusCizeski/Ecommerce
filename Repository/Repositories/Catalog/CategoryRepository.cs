@@ -1,5 +1,5 @@
-﻿using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -27,3 +27,4 @@ public class CategoryRepository : ICategoryRepository
     public async Task<bool> SlugExistsAsync(Guid tenantId, string slug, CancellationToken ct = default)
         => await _db.Categories.AnyAsync(c => c.TenantId == tenantId && c.Slug == slug, ct);
 }
+

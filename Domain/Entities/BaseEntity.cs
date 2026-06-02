@@ -7,7 +7,7 @@ namespace Ecommerce.Domain
         public Guid Id { get; protected set; } = Guid.NewGuid();
         public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; protected set; } = DateTime.UtcNow;
-        public DateTime? DeletedAt { get; set; }
+        public DateTime? DeletedAt { get; protected set; }
 
         private readonly List<INotification> _domainEvents = [];
         public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
@@ -15,6 +15,20 @@ namespace Ecommerce.Domain
         protected void AddDomainEvent(INotification domainEvent) => _domainEvents.Add(domainEvent);
         public void ClearDomainEvents() => _domainEvents.Clear();
         protected void MarkUpdated() => UpdatedAt = DateTime.UtcNow;
+        public void SoftDelete()
+        {
+            if (DeletedAt.HasValue) return;
+            DeletedAt = DateTime.UtcNow;
+            MarkUpdated();
+        }
+
+        public void Restore()
+        {
+            if (!DeletedAt.HasValue) return;
+            DeletedAt = null;
+            MarkUpdated();
+        }
+
         public bool IsDeleted => DeletedAt.HasValue;
     }
 

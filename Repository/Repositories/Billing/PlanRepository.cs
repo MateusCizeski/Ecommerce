@@ -1,5 +1,5 @@
 using Ecommerce.Domain;
-using Domain.Interfaces;
+using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Repositories;
@@ -26,3 +26,4 @@ public class PlanRepository : IPlanRepository
   public async Task AddAsync(Plan plan, CancellationToken ct = default)
       => await _db.Plans.AddAsync(plan, ct);
 }
+

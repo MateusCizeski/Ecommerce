@@ -8,10 +8,17 @@ public class Feature : BaseEntity
 
     protected Feature() { }
 
-    public static Feature Create(string key, string name, string description) => new()
+    public static Feature Create(string key, string name, string description)
     {
-        Key = key.Trim().ToLowerInvariant(),
-        Name = name.Trim(),
-        Description = description.Trim()
-    };
+        if (string.IsNullOrWhiteSpace(key)) throw new DomainException("Feature key is required.");
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Feature name is required.");
+        if (string.IsNullOrWhiteSpace(description)) throw new DomainException("Feature description is required.");
+
+        return new Feature
+        {
+            Key = key.Trim().ToLowerInvariant(),
+            Name = name.Trim(),
+            Description = description.Trim()
+        };
+    }
 }

@@ -24,12 +24,16 @@ public class Cart : TenantEntity
     {
         if (Status != CartStatus.Active) throw new DomainException("Cannot modify an inactive cart.");
         if (quantity <= 0) throw new DomainException("Quantity must be positive.");
-        if (!variant.HasStock(quantity)) throw new DomainException($"Insufficient stock for '{variant.Name}'.");
 
         var existing = _items.FirstOrDefault(i => i.ProductVariantId == variant.Id);
+        var totalQuantity = existing is not null ? existing.Quantity + quantity : quantity;
+
+        if (!variant.HasStock(totalQuantity))
+            throw new DomainException($"Insufficient stock for '{variant.Name}'.");
+
         if (existing is not null)
         {
-            existing.UpdateQuantity(existing.Quantity + quantity);
+            existing.UpdateQuantity(totalQuantity);
             MarkUpdated();
             return existing;
         }
@@ -45,7 +49,16 @@ public class Cart : TenantEntity
         if (Status != CartStatus.Active) throw new DomainException("Cannot modify an inactive cart.");
         var item = _items.FirstOrDefault(i => i.ProductVariantId == variantId)
             ?? throw new DomainException("Item not found in cart.");
-        if (quantity <= 0) _items.Remove(item); else item.UpdateQuantity(quantity);
+
+        if (quantity <= 0)
+        {
+            _items.Remove(item);
+        }
+        else
+        {
+            item.UpdateQuantity(quantity);
+        }
+
         MarkUpdated();
     }
 
@@ -57,7 +70,19 @@ public class Cart : TenantEntity
         MarkUpdated();
     }
 
-    public void Checkout() => Status = CartStatus.CheckedOut;
-    public void Abandon() => Status = CartStatus.Abandoned;
-    public bool IsExpired() => ExpiresAt.HasValue && ExpiresAt < DateTime.UtcNow;
+    public void Checkout()
+    {
+        if (Status != CartStatus.Active) throw new DomainException("Only active carts can be checked out.");
+        Status = CartStatus.CheckedOut;
+        MarkUpdated();
+    }
+
+    public void Abandon()
+    {
+        if (Status != CartStatus.Active) throw new DomainException("Only active carts can be abandoned.");
+        Status = CartStatus.Abandoned;
+        MarkUpdated();
+    }
+
+    public bool IsExpired() => ExpiresAt.HasValue && ExpiresAt <= DateTime.UtcNow;
 }

@@ -1,6 +1,6 @@
 using Ecommerce.Domain;
 
-namespace Domain.Interfaces;
+namespace Ecommerce.Domain.Interfaces;
 
 public interface IPlanRepository
 {
@@ -8,3 +8,4 @@ public interface IPlanRepository
   Task<IEnumerable<Plan>> GetActiveAsync(CancellationToken ct = default);
   Task AddAsync(Plan plan, CancellationToken ct = default);
 }
+

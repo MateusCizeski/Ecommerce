@@ -16,18 +16,29 @@ public class Address : BaseEntity
     protected Address() { }
 
     internal static Address Create(Guid customerId, string label, string street, string number,
-    string city, string state, string zipCode, string country, string? complement) => new()
+    string city, string state, string zipCode, string country, string? complement)
     {
-        CustomerId = customerId,
-        Label = label.Trim(),
-        Street = street.Trim(),
-        Number = number.Trim(),
-        Complement = complement?.Trim(),
-        City = city.Trim(),
-        State = state.Trim(),
-        ZipCode = zipCode.Trim(),
-        Country = country.Trim()
-    };
+        if (string.IsNullOrWhiteSpace(label)) throw new DomainException("Address label is required.");
+        if (string.IsNullOrWhiteSpace(street)) throw new DomainException("Street is required.");
+        if (string.IsNullOrWhiteSpace(number)) throw new DomainException("Address number is required.");
+        if (string.IsNullOrWhiteSpace(city)) throw new DomainException("City is required.");
+        if (string.IsNullOrWhiteSpace(state)) throw new DomainException("State is required.");
+        if (string.IsNullOrWhiteSpace(zipCode)) throw new DomainException("Zip code is required.");
+        if (string.IsNullOrWhiteSpace(country)) throw new DomainException("Country is required.");
+
+        return new Address
+        {
+            CustomerId = customerId,
+            Label = label.Trim(),
+            Street = street.Trim(),
+            Number = number.Trim(),
+            Complement = complement?.Trim(),
+            City = city.Trim(),
+            State = state.Trim(),
+            ZipCode = zipCode.Trim(),
+            Country = country.Trim()
+        };
+    }
 
     internal void SetAsDefault() => IsDefault = true;
     internal void UnsetDefault() => IsDefault = false;
