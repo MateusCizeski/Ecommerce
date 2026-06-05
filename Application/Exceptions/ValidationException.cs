@@ -2,13 +2,18 @@
 
 public class ValidationException : Exception
 {
-    public IDictionary<string, string[]> Errors { get; }
+    public IReadOnlyDictionary<string, string[]> Errors { get; }
 
-    public ValidationException(IEnumerable<FluentValidation.Results.ValidationFailure> failures)
-        : base("One or more validation failures occurred.")
+    public ValidationException()
+        : base("Ocorreram um ou mais erros de validação.")
     {
-        Errors = failures
-            .GroupBy(f => f.PropertyName, f => f.ErrorMessage)
-            .ToDictionary(g => g.Key, g => g.ToArray());
+        Errors = new Dictionary<string, string[]>().AsReadOnly();
+    }
+
+    // Desacoplado do FluentValidation! Aceita um dicionário genérico estruturado.
+    public ValidationException(IDictionary<string, string[]> errors)
+        : base("Ocorreram um ou mais erros de validação.")
+    {
+        Errors = errors.AsReadOnly();
     }
 }
