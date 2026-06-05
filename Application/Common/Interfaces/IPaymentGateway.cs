@@ -1,12 +1,15 @@
-namespace Application;
+using MediatR;
 
-public interface IPaymentGateway
+namespace Application.Common.Interfaces.Payments;
+
+// Focada exclusivamente em pagamentos avulsos
+public interface IPaymentService
 {
-    Task<CreatePaymentIntentResult> CreatePaymentIntentAsync(
-        decimal amount, string currency, string stripeCustomerId,
+    Task<PaymentIntentResult> CreatePaymentIntentAsync(
+        decimal amount, string currency, string customerId,
         CancellationToken ct = default);
 
-    Task<ConfirmPaymentResult> ConfirmPaymentAsync(
+    Task<PaymentConfirmationResult> ConfirmPaymentAsync(
         string paymentIntentId,
         CancellationToken ct = default);
 
@@ -17,38 +20,25 @@ public interface IPaymentGateway
     Task<string> CreateOrGetCustomerAsync(
         string email, string name,
         CancellationToken ct = default);
+}
 
-    Task<string> CreateStripeSubscriptionAsync(
-        string stripeCustomerId,
+// Focada exclusivamente em assinaturas / recorrência (ISP)
+public interface IBillingSubscriptionService
+{
+    Task<string> CreateSubscriptionAsync(
+        string customerId,
         string planName,
         decimal amount,
         BillingCycle billingCycle,
         CancellationToken ct = default);
 
-    Task<bool> CancelStripeSubscriptionAsync(
-        string stripeSubscriptionId,
+    Task<bool> CancelSubscriptionAsync(
+        string subscriptionId,
         CancellationToken ct = default);
-
-    /// <summary>
-    /// Validates the Stripe-Signature header and deserializes the event.
-    /// Throws if the signature is invalid (tampered or wrong secret).
-    /// Returns the raw event type and the event id for idempotency checks.
-    /// </summary>
-    StripeWebhookParseResult ParseWebhookEvent(string payload, string signatureHeader);
 }
 
-public record CreatePaymentIntentResult(string PaymentIntentId, string ClientSecret, bool RequiresAction);
-public record ConfirmPaymentResult(bool Succeeded, string ChargeId, string GatewayResponse);
-public record RefundResult(bool Succeeded, string RefundId, decimal Amount);
-
-public record StripeWebhookParseResult(
-    string EventId,
-    string EventType,
-    string PaymentIntentId,
-    string? ChargeId,
-    string? StripeSubscriptionId,
-    string? CustomerId,
-    decimal? Amount,
-    string? FailureMessage,
-    string RawPayload
-);
+// Focada estritamente no parser de notificações da infraestrutura
+public interface IPaymentWebhookParser
+{
+    WebhookParseResult ParseEvent(string payload, string signatureHeader);
+}

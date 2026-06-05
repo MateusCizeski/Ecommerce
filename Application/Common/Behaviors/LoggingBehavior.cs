@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.Diagnostics;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Common.Behaviors;
@@ -6,19 +7,29 @@ namespace Application.Common.Behaviors;
 public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
 {
+    private static readonly string RequestName = typeof(TRequest).Name;
+
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
     {
-        var name = typeof(TRequest).Name;
-        logger.LogInformation("Handling {RequestName}", name);
+        logger.LogInformation("Iniciando requisição: {RequestName}", RequestName);
+
+        var timer = Stopwatch.StartNew();
+
         try
         {
             var response = await next();
-            logger.LogInformation("Handled {RequestName} successfully", name);
+
+            timer.Stop();
+            logger.LogInformation("Requisição {RequestName} finalizada com sucesso em {ElapsedMs}ms",
+                RequestName, timer.ElapsedMilliseconds);
+
             return response;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error handling {RequestName}", name);
+            timer.Stop();
+            logger.LogError(ex, "Falha na requisição {RequestName} após {ElapsedMs}ms",
+                RequestName, timer.ElapsedMilliseconds);
             throw;
         }
     }

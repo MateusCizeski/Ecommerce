@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.Diagnostics;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Common.Behaviors;
@@ -7,17 +8,27 @@ public class PerformanceBehavior<TRequest, TResponse>(ILogger<PerformanceBehavio
     : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
 {
     private const int SlowRequestThresholdMs = 500;
+    private static readonly string RequestName = typeof(TRequest).Name;
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var response = await next();
-        sw.Stop();
+        var timer = Stopwatch.StartNew();
 
-        if (sw.ElapsedMilliseconds > SlowRequestThresholdMs)
-            logger.LogWarning("Slow request: {RequestName} took {ElapsedMs}ms",
-                typeof(TRequest).Name, sw.ElapsedMilliseconds);
+        try
+        {
+            return await next();
+        }
+        finally
+        {
+            timer.Stop();
+            var elapsedMilliseconds = timer.ElapsedMilliseconds;
 
-        return response;
+            if (elapsedMilliseconds > SlowRequestThresholdMs)
+            {
+                logger.LogWarning(
+                    "Alerta de Performance: A requisição {RequestName} demorou {ElapsedMs}ms. Detalhes: {@Request}",
+                    RequestName, elapsedMilliseconds, request);
+            }
+        }
     }
 }
