@@ -1,8 +1,5 @@
-using MediatR;
-
 namespace Application.Common.Interfaces.Payments;
 
-// Focada exclusivamente em pagamentos avulsos
 public interface IPaymentService
 {
     Task<PaymentIntentResult> CreatePaymentIntentAsync(
@@ -22,7 +19,6 @@ public interface IPaymentService
         CancellationToken ct = default);
 }
 
-// Focada exclusivamente em assinaturas / recorrência (ISP)
 public interface IBillingSubscriptionService
 {
     Task<string> CreateSubscriptionAsync(
@@ -37,7 +33,6 @@ public interface IBillingSubscriptionService
         CancellationToken ct = default);
 }
 
-// Focada estritamente no parser de notificações da infraestrutura
 public interface IPaymentWebhookParser
 {
     WebhookParseResult ParseEvent(string payload, string signatureHeader);
