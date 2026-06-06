@@ -1,8 +1,4 @@
-﻿using FluentValidation;
-using MediatR;
-using ValidationException = Application.Common.Exceptions.ValidationException;
-
-namespace Application.Common.Behaviors;
+﻿namespace Application.Common.Behaviors;
 
 public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
@@ -24,7 +20,7 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
 
         if (failures.Count > 0)
         {
-            throw new ValidationException(failures);
+            throw new System.ComponentModel.DataAnnotations.ValidationException(failures);
         }
 
         return await next();
