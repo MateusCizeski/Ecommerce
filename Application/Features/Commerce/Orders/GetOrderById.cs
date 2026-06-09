@@ -1,8 +1,4 @@
-using MediatR;
-using Ecommerce.Domain;
-using Ecommerce.Domain.Interfaces;
 using Application.Features.Commerce.Orders.DTOs;
-using PaymentDto = Application.Features.Commerce.Orders.DTOs.PaymentDto;
 
 namespace Application.Features.Commerce.Orders;
 
@@ -12,10 +8,35 @@ public class GetOrderByIdQueryHandler(IOrderRepository orderRepo, ITenantContext
 {
     public async Task<OrderDetailDto> Handle(GetOrderByIdQuery q, CancellationToken ct)
     {
-        var o = await orderRepo.GetByIdAsync(q.Id, ct) ?? throw new NotFoundException("Order", q.Id);
-        if (o.TenantId != tenant.TenantId) throw new TenantAccessException();
-        return new OrderDetailDto(o.Id, o.OrderNumber, o.Status.ToString(), o.Subtotal, o.DiscountAmount, o.ShippingAmount, o.TaxAmount, o.TotalAmount, o.PlacedAt, o.Notes,
-            o.Items.Select(i => new OrderItemDto(i.ProductVariantId, i.ProductNameSnapshot, i.SKUSnapshot, i.Quantity, i.UnitPrice, i.TotalPrice)),
-            o.Payments.Select(p => new Application.Features.Commerce.Orders.DTOs.PaymentDto(p.Id, p.Method.ToString(), p.Status.ToString(), p.Amount, p.Currency, p.PaidAt)));
+        var o = await orderRepo.GetByIdAsync(q.Id, ct)
+            ?? throw new NotFoundException("Pedido", q.Id);
+
+        if (o.TenantId != tenant.TenantId)
+            throw new ForbiddenException();
+
+        var items = o.Items
+            .Select(i => new OrderItemDto(i.ProductVariantId, i.ProductNameSnapshot, i.SKUSnapshot, i.Quantity, i.UnitPrice, i.TotalPrice))
+            .ToList()
+            .AsReadOnly();
+
+        var payments = o.Payments
+            .Select(p => new PaymentDto(p.Id, p.Method.ToString(), p.Status.ToString(), p.Amount, p.Currency, p.PaidAt))
+            .ToList()
+            .AsReadOnly();
+
+        return new OrderDetailDto(
+            o.Id,
+            o.OrderNumber,
+            o.Status.ToString(),
+            o.Subtotal,
+            o.DiscountAmount,
+            o.ShippingAmount,
+            o.TaxAmount,
+            o.TotalAmount,
+            o.PlacedAt,
+            o.Notes,
+            items,
+            payments
+        );
     }
 }
