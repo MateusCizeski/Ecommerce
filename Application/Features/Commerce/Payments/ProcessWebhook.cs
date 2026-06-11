@@ -1,212 +1,158 @@
-using Application.Interfaces;
+using Application.Common.Interfaces.Payments;
 
-namespace Application;
+namespace Application.Features.Commerce.Webhooks;
 
-public record ProcessStripeWebhookCommand(
-    string Payload,
-    string SignatureHeader
-) : IRequest<WebhookProcessResult>;
+public record ProcessPaymentWebhookCommand(string Payload, string SignatureHeader) : IRequest<WebhookProcessResult>;
 
 public record WebhookProcessResult(bool Processed, string EventType, string? Reason = null);
 
-public class ProcessStripeWebhookCommandHandler(
-    IStripeWebhookEventRepository webhookRepo,
+public class ProcessPaymentWebhookCommandHandler(
+    IWebhookEventRepository webhookRepo,
     IOrderRepository orderRepo,
     ISubscriptionRepository subscriptionRepo,
-    IPaymentGateway paymentGateway,
+    IPaymentWebhookParser webhookParser,
     IUnitOfWork uow,
     ICacheService cacheService,
-    ILogger<ProcessStripeWebhookCommandHandler> logger)
-    : IRequestHandler<ProcessStripeWebhookCommand, WebhookProcessResult>
+    ILogger<ProcessPaymentWebhookCommandHandler> logger)
+    : IRequestHandler<ProcessPaymentWebhookCommand, WebhookProcessResult>
 {
-    private static string BuildSubscriptionCacheKey(string tenantId) => $"tenant:{tenantId}:subscription:active";
+    private static string GetSubscriptionCacheKey(Guid tenantId) => $"tenant:{tenantId}:subscription:active";
 
-    public async Task<WebhookProcessResult> Handle(
-        ProcessStripeWebhookCommand cmd, CancellationToken ct)
+    public async Task<WebhookProcessResult> Handle(ProcessPaymentWebhookCommand cmd, CancellationToken ct)
     {
-        StripeWebhookParseResult parsed;
+        WebhookParseResult parsed;
         try
         {
-            parsed = paymentGateway.ParseWebhookEvent(cmd.Payload, cmd.SignatureHeader);
+            parsed = webhookParser.ParseEvent(cmd.Payload, cmd.SignatureHeader);
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Invalid Stripe webhook signature");
-            throw new DomainException("Invalid webhook signature.");
+            logger.LogWarning(ex, "Assinatura de Webhook inválida detectada.");
+            throw new ConflictException("Falha na validação criptográfica do Webhook.");
         }
 
         if (await webhookRepo.ExistsAsync(parsed.EventId, ct))
         {
-            logger.LogInformation(
-                "Webhook event {EventId} ({EventType}) already processed — skipping",
-                parsed.EventId, parsed.EventType);
-            return new WebhookProcessResult(false, parsed.EventType, "Already processed");
+            logger.LogInformation("Evento de Webhook {EventId} já foi processado anteriormente.", parsed.EventId);
+            return new WebhookProcessResult(false, parsed.EventType, "Já processado.");
         }
 
-        var webhookEvent = StripeWebhookEvent.Create(parsed.EventId, parsed.EventType, parsed.RawPayload);
+        var webhookEvent = WebhookLogEvent.Create(parsed.EventId, parsed.EventType, parsed.RawPayload);
         await webhookRepo.AddAsync(webhookEvent, ct);
         await uow.CommitAsync(ct);
+
         try
         {
             await RouteEventAsync(parsed, ct);
             webhookEvent.MarkProcessed();
             await uow.CommitAsync(ct);
 
-            logger.LogInformation(
-                "Webhook event {EventId} ({EventType}) processed successfully",
-                parsed.EventId, parsed.EventType);
-
+            logger.LogInformation("Evento {EventId} ({EventType}) processado com sucesso.", parsed.EventId, parsed.EventType);
             return new WebhookProcessResult(true, parsed.EventType);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Failed to process webhook event {EventId} ({EventType})",
-                parsed.EventId, parsed.EventType);
-
+            logger.LogError(ex, "Falha crítica ao processar regras de negócio do evento {EventId}.", parsed.EventId);
             webhookEvent.MarkFailed(ex.Message);
             await uow.CommitAsync(ct);
-
             throw;
         }
     }
 
-    private async Task RouteEventAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task RouteEventAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        switch (parsed.EventType)
+        if (!Enum.TryParse<WebhookEventType>(parsed.EventType, true, out var eventType))
         {
-            case "payment_intent.succeeded":
+            logger.LogDebug("Evento ignorado por não possuir mapeamento de negócio: {EventType}", parsed.EventType);
+            return;
+        }
+
+        switch (eventType)
+        {
+            case WebhookEventType.PaymentSucceeded:
                 await HandlePaymentSucceededAsync(parsed, ct);
                 break;
-
-            case "payment_intent.payment_failed":
+            case WebhookEventType.PaymentFailed:
                 await HandlePaymentFailedAsync(parsed, ct);
                 break;
-
-            case "charge.refunded":
+            case WebhookEventType.ChargeRefunded:
                 await HandleChargeRefundedAsync(parsed, ct);
                 break;
-
-            case "customer.subscription.deleted":
+            case WebhookEventType.SubscriptionDeleted:
                 await HandleSubscriptionDeletedAsync(parsed, ct);
                 break;
-
-            case "invoice.payment_failed":
+            case WebhookEventType.InvoicePaymentFailed:
                 await HandleInvoicePaymentFailedAsync(parsed, ct);
-                break;
-
-            default:
-                logger.LogDebug("Unhandled webhook event type: {EventType}", parsed.EventType);
                 break;
         }
     }
 
-    private async Task HandlePaymentSucceededAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task HandlePaymentSucceededAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        var order = await FindOrderByPaymentIntentAsync(parsed.PaymentIntentId, ct);
-        if (order is null)
-        {
-            logger.LogWarning(
-                "No order found for PaymentIntent {PaymentIntentId}", parsed.PaymentIntentId);
-            return;
-        }
+        var order = await orderRepo.GetByPaymentIntentIdAsync(parsed.PaymentIntentId, ct);
+        if (order is null) return;
 
-        if (order.Status != OrderStatus.Pending)
-        {
-            logger.LogInformation(
-                "Order {OrderId} is already in status {Status} — skipping webhook confirmation",
-                order.Id, order.Status);
-            return;
-        }
+        if (order.Status != OrderStatus.Pending) return;
 
-        var payment = order.Payments
-            .FirstOrDefault(p => p.StripePaymentIntentId == parsed.PaymentIntentId);
-
-        if (payment is null)
-        {
-            logger.LogWarning("Payment not found on order {OrderId}", order.Id);
-            return;
-        }
+        var payment = order.Payments.FirstOrDefault(p => p.ExternalPaymentIntentId == parsed.PaymentIntentId);
+        if (payment is null) return;
 
         payment.MarkSucceeded(parsed.ChargeId ?? string.Empty, "webhook:payment_intent.succeeded");
         order.ConfirmPayment();
-        await uow.CommitAsync(ct);
     }
 
-    private async Task HandlePaymentFailedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task HandlePaymentFailedAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        var order = await FindOrderByPaymentIntentAsync(parsed.PaymentIntentId, ct);
+        var order = await orderRepo.GetByPaymentIntentIdAsync(parsed.PaymentIntentId, ct);
         if (order is null) return;
 
-        var payment = order.Payments
-            .FirstOrDefault(p => p.StripePaymentIntentId == parsed.PaymentIntentId);
-
+        var payment = order.Payments.FirstOrDefault(p => p.ExternalPaymentIntentId == parsed.PaymentIntentId);
         if (payment is null) return;
 
-        payment.MarkFailed(parsed.FailureMessage ?? "Payment failed");
-        await uow.CommitAsync(ct);
+        payment.MarkFailed(parsed.FailureMessage ?? "Pagamento recusado pela operadora.");
     }
 
-    private async Task HandleChargeRefundedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task HandleChargeRefundedAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        if (parsed.ChargeId is null) return;
+        if (string.IsNullOrWhiteSpace(parsed.ChargeId)) return;
 
         var order = await orderRepo.GetByChargeIdAsync(parsed.ChargeId, ct);
-        if (order is null)
-        {
-            logger.LogWarning("No order found for charge {ChargeId}", parsed.ChargeId);
-            return;
-        }
+        if (order is null) return;
 
-        var payment = order.Payments
-            .FirstOrDefault(p => p.StripeChargeId == parsed.ChargeId);
-
+        var payment = order.Payments.FirstOrDefault(p => p.ExternalChargeId == parsed.ChargeId);
         if (payment is null) return;
 
-        var refundAmount = parsed.Amount ?? payment.Amount;
-        payment.RegisterRefund(refundAmount);
-        await uow.CommitAsync(ct);
+        payment.RegisterRefund(parsed.Amount ?? payment.Amount);
     }
 
-    private async Task HandleSubscriptionDeletedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task HandleSubscriptionDeletedAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(parsed.StripeSubscriptionId)) return;
+        if (string.IsNullOrWhiteSpace(parsed.SubscriptionId)) return;
 
-        var subscription = await subscriptionRepo.GetByStripeSubscriptionIdAsync(parsed.StripeSubscriptionId, ct);
-        if (subscription is null)
-        {
-            logger.LogWarning("No subscription found for Stripe subscription {StripeSubscriptionId}", parsed.StripeSubscriptionId);
-            return;
-        }
-
-        if (subscription.Status == SubscriptionStatus.Cancelled)
-            return;
+        var subscription = await subscriptionRepo.GetByExternalIdAsync(parsed.SubscriptionId, ct);
+        if (subscription is null || subscription.Status == SubscriptionStatus.Cancelled) return;
 
         subscription.Cancel();
-        await ClearSubscriptionCacheAsync(subscription.TenantId, ct);
-        await uow.CommitAsync(ct);
+        await cacheService.RemoveAsync(GetSubscriptionCacheKey(subscription.TenantId), ct);
     }
 
-    private async Task HandleInvoicePaymentFailedAsync(StripeWebhookParseResult parsed, CancellationToken ct)
+    private async Task HandleInvoicePaymentFailedAsync(WebhookParseResult parsed, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(parsed.StripeSubscriptionId)) return;
+        if (string.IsNullOrWhiteSpace(parsed.SubscriptionId)) return;
 
-        var subscription = await subscriptionRepo.GetByStripeSubscriptionIdAsync(parsed.StripeSubscriptionId, ct);
-        if (subscription is null) return;
-
-        if (subscription.Status == SubscriptionStatus.Cancelled || subscription.Status == SubscriptionStatus.Expired)
-            return;
+        var subscription = await subscriptionRepo.GetByExternalIdAsync(parsed.SubscriptionId, ct);
+        if (subscription is null || subscription.Status == SubscriptionStatus.Cancelled || subscription.Status == SubscriptionStatus.Expired) return;
 
         subscription.MarkPastDue();
-        await ClearSubscriptionCacheAsync(subscription.TenantId, ct);
-        await uow.CommitAsync(ct);
+        await cacheService.RemoveAsync(GetSubscriptionCacheKey(subscription.TenantId), ct);
     }
+}
 
-    private async Task ClearSubscriptionCacheAsync(Guid tenantId, CancellationToken ct)
-    {
-        await cacheService.RemoveAsync(BuildSubscriptionCacheKey(tenantId.ToString()), ct);
-    }
-
-    private async Task<Order?> FindOrderByPaymentIntentAsync(string paymentIntentId, CancellationToken ct)
-        => await orderRepo.GetByPaymentIntentIdAsync(paymentIntentId, ct);
+public enum WebhookEventType
+{
+    PaymentSucceeded,
+    PaymentFailed,
+    ChargeRefunded,
+    SubscriptionDeleted,
+    InvoicePaymentFailed
 }
