@@ -1,18 +1,11 @@
-namespace Application;
+using Application.Common.Interfaces.Payments;
 
-public record RefundPaymentCommand(
-    Guid OrderId,
-    Guid PaymentId,
-    decimal? Amount,     // null = full refund
-    string Reason,
-    bool RestoreStock
-) : IRequest<RefundPaymentResult>;
+namespace Application.Features.Commerce.Orders;
 
-public record RefundPaymentResult(
-    Guid PaymentId,
-    decimal RefundedAmount,
-    bool IsFullRefund
-);
+public record RefundPaymentCommand(Guid OrderId, Guid PaymentId, decimal? Amount, string Reason, bool RestoreStock)
+    : IRequest<RefundPaymentResult>;
+
+public record RefundPaymentResult(Guid PaymentId, decimal RefundedAmount, bool IsFullRefund);
 
 public class RefundPaymentCommandValidator : AbstractValidator<RefundPaymentCommand>
 {
@@ -20,18 +13,15 @@ public class RefundPaymentCommandValidator : AbstractValidator<RefundPaymentComm
     {
         RuleFor(x => x.OrderId).NotEmpty();
         RuleFor(x => x.PaymentId).NotEmpty();
-        RuleFor(x => x.Reason).NotEmpty().MaximumLength(500);
-        RuleFor(x => x.Amount)
-            .GreaterThan(0)
-            .When(x => x.Amount.HasValue)
-            .WithMessage("Refund amount must be positive when specified.");
+        RuleFor(x => x.Reason).NotEmpty().MaximumLength(500).WithMessage("Motivo do estorno é obrigatório.");
+        RuleFor(x => x.Amount).GreaterThan(0).When(x => x.Amount.HasValue).WithMessage("O valor parcial de estorno deve ser maior que zero.");
     }
 }
 
 public class RefundPaymentCommandHandler(
     IOrderRepository orderRepo,
     IProductVariantRepository variantRepo,
-    IPaymentGateway paymentGateway,
+    IPaymentService paymentService,
     IUnitOfWork uow,
     ITenantContext tenant,
     ILogger<RefundPaymentCommandHandler> logger)
@@ -40,56 +30,45 @@ public class RefundPaymentCommandHandler(
     public async Task<RefundPaymentResult> Handle(RefundPaymentCommand cmd, CancellationToken ct)
     {
         var order = await orderRepo.GetByIdAsync(cmd.OrderId, ct)
-            ?? throw new NotFoundException(nameof(Order), cmd.OrderId);
+            ?? throw new NotFoundException("Pedido", cmd.OrderId);
 
         if (order.TenantId != tenant.TenantId)
-            throw new TenantAccessException();
+            throw new ForbiddenException();
 
         var payment = order.Payments.FirstOrDefault(p => p.Id == cmd.PaymentId)
-            ?? throw new NotFoundException(nameof(Payment), cmd.PaymentId);
+            ?? throw new NotFoundException("Transação de Pagamento", cmd.PaymentId);
 
         if (payment.Status != PaymentStatus.Succeeded && payment.Status != PaymentStatus.PartiallyRefunded)
-            throw new DomainException("Only succeeded or partially refunded payments can be refunded.");
+            throw new ConflictException("Apenas transações concluídas ou parcialmente estornadas admitem reembolso.");
 
         var refundAmount = cmd.Amount ?? payment.RefundableAmount;
 
         if (refundAmount > payment.RefundableAmount)
-            throw new DomainException(
-                $"Requested refund ({refundAmount}) exceeds refundable amount ({payment.RefundableAmount}).");
+            throw new ConflictException($"O valor solicitado (R$ {refundAmount}) excede o saldo estornável (R$ {payment.RefundableAmount}).");
 
-        // 1. Issue refund via Stripe
-        if (payment.StripeChargeId is null)
-            throw new DomainException("Cannot refund — no Stripe charge ID on this payment.");
+        if (string.IsNullOrWhiteSpace(payment.ExternalChargeId))
+            throw new ConflictException("Falha operacional: esta transação não possui registro de identificador externo para estorno.");
 
-        var result = await paymentGateway.RefundAsync(payment.StripeChargeId, refundAmount, ct);
+        var result = await paymentService.RefundAsync(payment.ExternalChargeId, refundAmount, ct);
 
         if (!result.Succeeded)
-            throw new PaymentException($"Stripe refund failed for charge {payment.StripeChargeId}.");
+            throw new PaymentException($"Falha no estorno do gateway para a transação {payment.ExternalChargeId}.");
 
-        // 2. Register on domain entity
         payment.RegisterRefund(refundAmount);
-
         var isFullRefund = payment.Status == PaymentStatus.Refunded;
 
-        // 3. Restore stock if requested (e.g. full refund + cancellation)
         if (cmd.RestoreStock)
         {
             foreach (var item in order.Items)
             {
-                await variantRepo.RestoreStockAsync(item.ProductVariantId, item.Quantity, ct: ct);
-
-                logger.LogInformation(
-                    "Restored {Qty} units of variant {VariantId} after refund on order {OrderId}",
-                    item.Quantity, item.ProductVariantId, order.Id);
+                await variantRepo.RestoreStockAsync(item.ProductVariantId, item.Quantity, ct);
+                logger.LogInformation("Estoque devolvido: +{Qty} unidades na variante {VariantId}.", item.Quantity, item.ProductVariantId);
             }
         }
 
         await uow.CommitAsync(ct);
 
-        logger.LogInformation(
-            "Refund of {Amount} {Currency} issued for order {OrderId}, payment {PaymentId}. Full: {IsFullRefund}",
-            refundAmount, payment.Currency, order.Id, payment.Id, isFullRefund);
-
+        logger.LogInformation("Estorno executado com sucesso: R$ {Amount} devolvidos no pedido {OrderId}.", refundAmount, order.Id);
         return new RefundPaymentResult(payment.Id, refundAmount, isFullRefund);
     }
 }

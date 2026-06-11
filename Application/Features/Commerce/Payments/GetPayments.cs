@@ -12,22 +12,20 @@ public record PaymentDto(
     string Currency,
     DateTime? PaidAt,
     DateTime? RefundedAt,
-    string? StripePaymentIntentId,
-    string? StripeChargeId
+    string? ExternalPaymentIntentId,
+    string? ExternalChargeId
 );
 
-public class GetOrderPaymentsQueryHandler(
-    IOrderRepository orderRepo,
-    ITenantContext tenant)
-    : IRequestHandler<GetOrderPaymentsQuery, IEnumerable<PaymentDto>>
+public class GetOrderPaymentsQueryHandler(IOrderRepository orderRepo, ITenantContext tenant)
+    : IRequestHandler<GetOrderPaymentsQuery, IReadOnlyCollection<PaymentDto>>
 {
-    public async Task<IEnumerable<PaymentDto>> Handle(GetOrderPaymentsQuery q, CancellationToken ct)
+    public async Task<IReadOnlyCollection<PaymentDto>> Handle(GetOrderPaymentsQuery q, CancellationToken ct)
     {
         var order = await orderRepo.GetByIdAsync(q.OrderId, ct)
-            ?? throw new NotFoundException("Order", q.OrderId);
+            ?? throw new NotFoundException("Pedido", q.OrderId);
 
         if (order.TenantId != tenant.TenantId)
-            throw new TenantAccessException();
+            throw new ForbiddenException();
 
         return order.Payments.Select(p => new PaymentDto(
             p.Id,
@@ -39,8 +37,8 @@ public class GetOrderPaymentsQueryHandler(
             p.Currency,
             p.PaidAt,
             p.RefundedAt,
-            p.StripePaymentIntentId,
-            p.StripeChargeId
-        ));
+            p.ExternalPaymentIntentId,
+            p.ExternalChargeId
+        )).ToList().AsReadOnly();
     }
 }
